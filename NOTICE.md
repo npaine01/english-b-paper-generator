@@ -52,3 +52,20 @@ calibrated. Once the constants were locked into `ibenglishb.sty` and
 
 If you need to check output against a real paper, do it locally with your own
 copy. Do not commit the result.
+
+## Licence
+
+The contents of this repository are released under the MIT Licence — see
+`LICENSE`. That covers the package, the UI, the tests, the build system, the
+documentation and the original sample papers.
+
+Two things it does not do, and cannot:
+
+- **It grants no rights over IB material.** None is present here, so there is
+  nothing to grant, but the point is worth stating: an MIT grant on this code
+  says nothing about the past papers it was measured from, and does not make
+  their content redistributable by you or anyone else.
+- **It implies no affiliation.** This is an independent project. It is not
+  produced, endorsed, approved or reviewed by the International Baccalaureate
+  Organization, and "International Baccalaureate", "IB" and "Diploma Programme"
+  are their marks, used here only to describe what the output is for.

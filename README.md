@@ -360,3 +360,12 @@ sessions (`word`/`words`, `lines 12–23`/`lines 12 to 23`, colon or full stop):
   as normal.
 - The wavy stimulus border approximates the IB's; it is a TikZ `snake`
   decoration, not the exact house shape.
+
+## Licence
+
+MIT — see [`LICENSE`](LICENSE).
+
+It covers the code, the templates and the original sample papers. It grants no
+rights over IB material (none is included), and implies no affiliation with or
+endorsement by the International Baccalaureate Organization. See
+[`NOTICE.md`](NOTICE.md).
