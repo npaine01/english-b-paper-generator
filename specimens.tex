@@ -1,0 +1,270 @@
+%% specimens.tex — one worked example of every question type.
+%% ---------------------------------------------------------------------------
+%% A gallery, not a real paper: it exists so you can see each question type
+%% rendered, and so `make verify` has one of everything to measure.
+%%
+%%   tectonic -X compile specimens.tex
+%%
+%% All content is original. Every reading block is written to stand alone —
+%% there is no accompanying text booklet, so the questions are illustrative
+%% rather than answerable. For a paper whose questions really do match a text,
+%% see reading-question-booklet.tex + reading-text-booklet.tex.
+%% ---------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\usepackage{ibenglishb}
+
+\ibsetsession{QDHS\,--\,2026}
+\ibsetmaxmarks{62}          % this file is a gallery, not a real paper
+
+\begin{document}
+
+% ───────────────────────────── R1 · multiple choice ─────────────────────────
+\ibtextheading{A}{Why night markets are coming back}
+\ibrubricmcq
+\begin{ibmcq}[C]{According to the text, the first traders to return to the
+  night market were\dots}
+  \opt{restaurant owners looking for a second site.}
+  \opt{farmers who could not sell during the day.}
+  \opt{people who had lost an indoor stall.}
+  \opt{students running a stall for one season.}
+\end{ibmcq}
+\begin{ibmcq}[C]{The council changed the rules in order to\dots}
+  \opt{increase the rent it collected.}
+  \opt{reduce the noise after midnight.}
+  \opt{let traders share a single pitch.}
+  \opt{limit the number of food stalls.}
+\end{ibmcq}
+
+% ───────────────────────────── R4 · matching headings ───────────────────────
+\ibrubricheadings
+\begin{ibmatch}
+  \mgap[E] \mgap[B] \mgap[G] \mgap[C]
+
+  \mopt{Make time for rest}
+  \mopt{Never stop learning}
+  \mopt{Start before you are ready}
+  \mopt{Find your audience}
+  \mopt{Keep the first version small}
+  \mopt{Measure only what matters}
+  \mopt{Do it where someone notices}
+  \mopt{Focus on your weaknesses}
+\end{ibmatch}
+
+% ───────────────────────────── R2 · true statements ─────────────────────────
+\ibtextheading{C}{An extract from \textit{The Long Way Round}}
+\begin{ibtrue}[A, B, D, H]{4}
+  \opt{Mirela had been told that the road was being repaired.}
+  \opt{Mirela waited at the shelter although she expected no bus.}
+  \opt{The walk to the town was uphill for most of the way.}
+  \opt{Mirela had made the same journey on foot before.}
+  \opt{The dog at the Dennehy place did not recognise her.}
+  \opt{Mirela's mother wrote to her about the family shop.}
+  \opt{Mirela expected to arrive later than she had planned.}
+  \opt{Mirela did not want to explain her journey to other people.}
+\end{ibtrue}
+
+% ───────────────────────────── R11 · true/false + justification ─────────────
+\ibrubrictf
+\ibtfq[F: ``she had known it would not'']%
+  {Mirela was surprised when the bus failed to arrive.}
+\ibtfq[T: ``accurate about the surface and silent about everything underneath'']%
+  {Mirela thought her mother's letters left a great deal unsaid.}
+
+% ───────────────────────────── R5 · matching vocabulary ─────────────────────
+\ibtextheading{B}{Five ways to make a new habit stick}
+\ibrubricvocab
+\begin{ibmatch}
+  \mitem[D]{surge \ibline{1}}
+  \mitem[H]{dormant \ibline{2}}
+  \mitem[E]{fragile \ibline{21}}
+  \mitem[B]{collapse \ibline{27}}
+
+  \mopt{piece}      \mopt{failure}
+  \mopt{celebration}\mopt{a sharp rise}
+  \mopt{easily lost}\mopt{suggestion}
+  \mopt{scale}      \mopt{inactive}
+\end{ibmatch}
+
+% ───────────────────────────── R7 · sentence halves ─────────────────────────
+\ibrubrichalves
+\begin{ibmatch}
+  \mitem[E]{The eleven power tools\dots}
+  \mitem[F]{The musical instruments\dots}
+  \mitem[B]{Farida\dots}
+  \mitem[D]{Iversen\dots}
+
+  \mopt{were bought back by the council.}
+  \mopt{teaches people to mend their own things.}
+  \mopt{recalled the first year with emotion.}
+  \mopt{now advises other librarians.}
+  \mopt{were permanently out on loan.}
+  \mopt{were never returned on time.}
+  \mopt{were stored behind the front desk.}
+  \mopt{refused to accept any donations.}
+\end{ibmatch}
+
+\clearpage
+% ───────────────────────────── R6 · matching to people ──────────────────────
+\ibrubricpeople
+\begin{ibmatch}
+  \mitem[C]{Halvard}
+  \mitem[F]{Ines}
+  \mitem[A]{Tomas}
+  \mitem[H]{Wren}
+
+  \mopt{I keep bees on the roof.}
+  \mopt{I cycle to work in all weathers.}
+  \mopt{I have never owned a car.}
+  \mopt{I grew up beside a river.}
+  \mopt{I cook for my neighbours on Sundays.}
+  \mopt{I sing in a choir every week.}
+  \mopt{I read two newspapers every day.}
+  \mopt{I have lived in the same street all my life.}
+\end{ibmatch}
+
+% ───────────────────────────── R3 · matching questions to gaps ──────────────
+\ibrubricmatchq
+\begin{ibmatch}
+  \mgap[A] \mgap[C] \mgap[E]
+
+  \mopt{What is the aim of the collection?}
+  \mopt{Will members be charged a deposit?}
+  \mopt{How long can an item be kept?}
+  \mopt{What does the council think of the scheme?}
+  \mopt{Will the library repair broken items?}
+  \mopt{Is there a limit on donations?}
+\end{ibmatch}
+
+% ───────────────────────────── R8 · gap-fill summary ────────────────────────
+\ibtextheading{A}{Sensors on the reef}
+\ibrubricgapsummary
+\ibsummary{The article describes a project that uses small sensors to
+  \ibgap{25} coral at risk. The devices record temperature hour by hour, but
+  they can also \ibgap{26} divers away from damaged areas. Researchers think
+  that fish \ibgap{27} the low hum of the sensors for a passing boat, and
+  \ibgap{28} whenever a new device is installed.}
+\begin{ibmatch}
+  \mgap[H] \mgap[E] \mgap[C] \mgap[A]
+
+  \mopt{flee}   \mopt{feed}
+  \mopt{mistake}\mopt{fight}
+  \mopt{steer}  \mopt{transport}
+  \mopt{fear}   \mopt{monitor}
+\end{ibmatch}
+
+% ───────────────────────────── R12 · complete the sentence ──────────────────
+\ibtextheading{A}{The library that lends almost anything}
+\ibrubriccomplete{\ibparas{3}{4}}
+\ibcompleteq[eleven power tools kept behind the desk]%
+  {Tomas Iversen started the collection with\dots}
+\ibcompleteq[repairs proved expensive]%
+  {The scheme to lend musical instruments ended partly because\dots}
+
+% ───────────────────────────── R9 · short answer ────────────────────────────
+\ibrubricshort
+\ibshortq[(how to use) a wallpaper steamer]%
+  {What is Farida Osman explaining to a stranger at the start of the text?}
+\ibshortq[people living within a few streets]%
+  {Who donated almost all of the items in the collection?}
+\ibshortq[a calculation]%
+  {What persuaded the council to fund the expansion?}
+
+\clearpage
+% ───────────────────────────── R10 · find the word ──────────────────────────
+\ibrubricfindword{\ibparas{5}{6}}
+\ibfindwordq[candid]{honest}
+\ibfindwordq[deflating]{disappointing}
+\ibfindwordq[volunteer]{unpaid helper}
+\ibfindwordq[alternative]{other option}
+
+% ───────────────────────────── R13 · referents ──────────────────────────────
+\ibrubricrefer
+\ibreferq[(the) donated items]%
+  {\dots almost all of \ibu{them} were donated\dots\ \ibline{12}}
+\ibreferq[the musical instruments]%
+  {\dots nobody wanted to give \ibu{them} back\dots\ \ibline{24}}
+
+\clearpage
+% ═════════════════════════════ LISTENING ═══════════════════════════════════
+\ibaudiotext{A}{You are going to hear an interview between a journalist and the
+  coordinator of a city bicycle-sharing scheme.}
+\ibrubricmcq
+\begin{ibmcq}[B]{Which of the following does the city provide?}
+  \opt{Free repairs for privately owned bicycles}
+  \opt{Docking stations at every railway stop}
+  \opt{Training sessions for nervous cyclists}
+\end{ibmcq}
+\begin{ibmcq}[A]{Before riding, users are required to\dots}
+  \opt{register once using an application.}
+  \opt{show proof of address at a station.}
+  \opt{pay a deposit that is later returned.}
+\end{ibmcq}
+\ibnotesbox
+
+% ───────────────────────────── L3 · match to source ─────────────────────────
+\ibaudiotext{B}{You are going to hear a conversation between Ali and Stephanie,
+  two staff members of a community centre, about getting more local people
+  involved in its activities.}
+\ibrubricsource
+\begin{ibsource}{Whose opinion?}{Ali}{Stephanie}{Both}
+  \srow[Both]{The number of regular visitors has fallen and needs attention.}
+  \srow[Ali]{The centre's opening hours suit very few working people.}
+  \srow[Stephanie]{Public transport to the centre is unsatisfactory.}
+  \srow[Both]{People who arrive together tend to keep coming back.}
+  \srow[Stephanie]{The centre should change how it advertises its activities.}
+\end{ibsource}
+\ibnotesbox
+
+\clearpage
+% ───────────────────────────── L5 · gap-fill ────────────────────────────────
+\ibrubricgapfill
+\ibstimcaption{Athlete profile:}
+\begin{ibstimulus}
+  \textbf{Nadia Kessler}\par\vspace{2mm}
+  \textbf{Regional Regatta record:}
+  \begin{ibstimlist}
+    \item 2024: runner-up
+    \item 2025 (ongoing): has just won her \ibgapnext
+  \end{ibstimlist}
+  \vspace{1.5mm}
+  \textbf{About Nadia:}
+  \begin{ibstimlist}
+    \item Took up rowing at school after being told she was \ibgapnext
+    \item First attracted attention by \ibgapnext
+    \item Short-term goal: to \ibgapnext
+    \item Long-term goal: to \ibgapnext
+  \end{ibstimlist}
+\end{ibstimulus}
+\ibgapq[opening heat]
+\ibgapq[too small]
+\ibgapq[beating the national champion]
+\ibgapq[qualify for the national squad]
+\ibgapq[coach in her home town]
+
+% ───────────────────────────── L2 · true statements (5) ─────────────────────
+\ibaudiotext{B}{You are going to hear a presentation for Career Day, about
+  working as a lighthouse keeper.}
+\begin{ibtrue}[B, D, F, G, H]{5}
+  \opt{The speaker has done the job for fifteen years.}
+  \opt{Keepers are required to have one full day off each week.}
+  \opt{Keepers may request a different posting every month.}
+  \opt{The speaker pays part of the cost of the supply boat.}
+  \opt{The speaker recently took a holiday abroad.}
+  \opt{Fourteen hours of rest are required after a night watch.}
+  \opt{Two-week postings are common in this job.}
+  \opt{The speaker thinks it is important to keep a daily record.}
+  \opt{The speaker often cooks with the relief keeper.}
+  \opt{The speaker finds the winter storms easy to deal with.}
+\end{ibtrue}
+
+\clearpage
+% ───────────────────────────── L4 · short answer, incl. two-answer ──────────
+\ibrubricshort
+\ibshortq[(the body's) stress response]%
+  {According to Dr Halloran, what does cold water trigger?}
+\ibshortqtwo[better sleep][a sense of routine]%
+  {What two benefits do regular swimmers report?
+   Give two answers.}
+\ibnotesbox
+
+\end{document}

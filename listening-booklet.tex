@@ -1,0 +1,178 @@
+%% listening-booklet.tex
+%% ---------------------------------------------------------------------------
+%% A complete English B HL Paper 2 listening comprehension booklet, 25 marks.
+%%
+%% Structure follows the IB rule that audio texts B and C each use two
+%% different question types: one on the material before the natural pause and
+%% a different one on the material after it.
+%%
+%%   tectonic -X compile listening-booklet.tex
+%% ---------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\usepackage{ibenglishb}
+
+\ibsetsession{QDHS\,--\,2026}
+\ibsetmaxmarks{25}
+\ibnotesonall   % Notes box becomes page furniture on every page
+
+\begin{document}
+
+% ═══════════════════════════════════════ COVER ═════════════════════════════
+\ibcover
+  {English B -- Higher level -- Paper 2 -- Listening comprehension}
+  {8 May 2026}
+  {1 h}
+  {\begin{ibinstructions}{Instructions to students}
+     \item Write your session number in the boxes above.
+     \item Do not open this examination paper until instructed to do so.
+     \item Answer all questions. Each question is allocated \textbf{[1 mark]}
+           unless otherwise stated.
+     \item Answers must be written within the answer boxes provided.
+     \item Notes may be written in the spaces provided. Notes will not be marked.
+     \item Answers and notes may be written at any time during the examination.
+     \item There will be three audio texts. All answers must be based on the
+           appropriate audio texts.
+     \item There will be four minutes of reading time at the start of each
+           audio text.
+     \item Each audio text will be played twice. There will be a two-minute
+           pause before each audio text is repeated.
+     \item The maximum mark for this examination paper is \textbf{[25 marks]}.
+   \end{ibinstructions}}
+  {8 pages}
+  {\ibsessioncode}
+
+% ═══════════════════════ TEXT A — multiple choice ══════════════════════════
+% ═══════════════════════ TEXT A — multiple choice ══════════════════════════
+\ibaudiotext{A}{You are going to hear an interview between a journalist and the
+  coordinator of a city bicycle-sharing scheme.}
+
+\ibrubricmcq
+\begin{ibmcq}[A]{The scheme was originally set up in order to\dots}
+  \opt{reduce the number of short car journeys.}
+  \opt{raise money for the city council.}
+  \opt{replace part of the bus network.}
+  \opt{attract visitors to the city centre.}
+\end{ibmcq}
+\begin{ibmcq}[B]{Before riding, users must\dots}
+  \opt{book a bicycle the day before.}
+  \opt{register once using an application.}
+  \opt{pay a fee for each month.}
+  \opt{collect a helmet from the station.}
+\end{ibmcq}
+\begin{ibmcq}[D]{Most of the damage to the bicycles is caused by\dots}
+  \opt{theft.}
+  \opt{accidents.}
+  \opt{bad weather.}
+  \opt{ordinary use.}
+\end{ibmcq}
+\begin{ibmcq}[C]{The coordinator says the biggest surprise has been\dots}
+  \opt{how far people ride.}
+  \opt{how early people ride.}
+  \opt{who uses the bicycles.}
+  \opt{how few bicycles are lost.}
+\end{ibmcq}
+\begin{ibmcq}[B]{The interview is mainly about the\dots}
+  \opt{cost of running the scheme.}
+  \opt{way the scheme has developed.}
+  \opt{safety of cycling in the city.}
+  \opt{plans to close the scheme down.}
+\end{ibmcq}
+
+% ══════════════ TEXT B — gap fill (before pause), MCQ (after) ══════════════
+\ibaudiotext{B}{You are going to hear Anouk speaking first with a competitive
+  rower, then with a boat club manager, at a regional regatta.}
+
+\ibrubricgapfill
+\ibstimcaption{Athlete profile:}
+\begin{ibstimulus}
+  \textbf{Nadia Kessler}
+
+  \vspace{2mm}
+  \textbf{Regional Regatta record:}
+  \begin{ibstimlist}
+    \item 2024: runner-up
+    \item 2025 (ongoing): has just won her \ibgapnext
+  \end{ibstimlist}
+
+  \vspace{1.5mm}
+  \textbf{About Nadia:}
+  \begin{ibstimlist}
+    \item Took up rowing at school after being told she was \ibgapnext
+    \item First attracted attention by \ibgapnext
+    \item Short-term goal: to \ibgapnext
+    \item Long-term goal: to \ibgapnext
+  \end{ibstimlist}
+\end{ibstimulus}
+
+\ibturnover
+\clearpage
+
+\ibgapq[opening heat]
+\ibgapq[too small]
+\ibgapq[beating the national champion]
+\ibgapq[qualify for the national squad]
+\ibgapq[coach in her home town]
+
+\clearpage
+\ibrubricmcq
+\begin{ibmcq}[A]{The boat club supports the regatta mainly in order to\dots}
+  \opt{attract new members.}
+  \opt{sell its old equipment.}
+  \opt{please its sponsors.}
+  \opt{train its own coaches.}
+\end{ibmcq}
+\begin{ibmcq}[C]{According to the manager, the club's main difficulty is\dots}
+  \opt{finding qualified coaches.}
+  \opt{booking water for training.}
+  \opt{the cost of replacing boats.}
+  \opt{competition from other sports.}
+\end{ibmcq}
+\begin{ibmcq}[B]{What does the manager say puts most beginners off?}
+  \opt{The cost of joining.}
+  \opt{The early starts.}
+  \opt{The risk of injury.}
+  \opt{The lack of changing rooms.}
+\end{ibmcq}
+\begin{ibmcq}[D]{The club's open day is intended to show that rowing is\dots}
+  \opt{safer than people think.}
+  \opt{suitable for all ages.}
+  \opt{easier than it looks.}
+  \opt{cheaper than people expect.}
+\end{ibmcq}
+\begin{ibmcq}[A]{The training programme described is\dots}
+  \opt{free for members under eighteen.}
+  \opt{open only to experienced rowers.}
+  \opt{run during the school holidays.}
+  \opt{shared with a neighbouring club.}
+\end{ibmcq}
+
+% ═════════ TEXT C — true statements (before pause), short answer (after) ════
+\ibaudiotext{C}{You are going to hear a podcast about volunteer mountain
+  rescue teams.}
+
+\begin{ibtrue}[B, D, F, G, J]{5}
+  \opt{Volunteers are paid for the hours they spend on call.}
+  \opt{Every member of the team has another full-time job.}
+  \opt{Most call-outs happen during the winter months.}
+  \opt{The team is contacted through the emergency services.}
+  \opt{New volunteers may join without any training.}
+  \opt{The team raises most of its funding itself.}
+  \opt{Navigation errors cause more call-outs than injuries.}
+  \opt{The team refuses to search for missing animals.}
+  \opt{Members must live within the valley they cover.}
+  \opt{Volunteers are asked to carry their equipment at all times.}
+\end{ibtrue}
+
+\ibturnover
+\clearpage
+
+\ibrubricshort
+\ibshortq[(their) mobile phone]{What does the speaker say walkers rely on too heavily?}
+\ibshortq[two years]{How long does it take to train a new volunteer fully?}
+\ibshortq[a whistle]{What item does the speaker recommend that every walker carry?}
+\ibshortq[the weather (changing)]{What does the speaker say people most often underestimate?}
+\ibshortq[to leave a route plan]{What does the speaker ask listeners to do before setting out?}
+
+\ibblankpage
+
+\end{document}

@@ -1,0 +1,140 @@
+%% torture.tex — adversarial content for the regression check.
+%% ---------------------------------------------------------------------------
+%% Nothing here shares content with the templates. Everything is deliberately
+%% awkward: options that wrap to two and three lines, matching items long
+%% enough to push the answer-square column right, stems that wrap, a tick table
+%% with long statements, and enough questions to force several page breaks at
+%% inconvenient places.
+%%
+%% verify.py measures the output and asserts the layout rules hold anyway.
+%% ---------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\usepackage{ibenglishb}
+\ibnotesonall
+\ibsetmaxmarks{0}
+
+\begin{document}
+
+\ibaudiotext{A}{You are going to hear a conversation recorded at a hydrological
+  research station on the upper reaches of the Rhône, concerning sediment.}
+
+% --- options that wrap to two and three lines ------------------------------
+\ibrubricmcq
+\begin{ibmcq}[B]{According to the hydrologist, what makes the winter
+  measurements at the upper gauging station considerably harder to interpret
+  than those taken during the summer months?}
+  \opt{The instruments are recalibrated on a rolling schedule that does not
+       align with the seasonal transition, so readings taken either side of it
+       cannot be compared directly without adjustment.}
+  \opt{Meltwater arriving from the tributaries carries a suspended load that
+       varies far more from hour to hour than it does in summer.}
+  \opt{Access to the station is restricted.}
+\end{ibmcq}
+
+\begin{ibtrue}[A, C, D, F, I]{5}
+  \opt{The station has been recording continuously since 1974, with only two
+       interruptions, both caused by damage to the intake structure.}
+  \opt{Short.}
+  \opt{The sediment budget for the catchment is dominated by a small number of
+       high-magnitude events rather than by the everyday background transport
+       that the instruments record most of the time.}
+  \opt{Bedload and suspended load are measured by different methods.}
+  \opt{Another short one.}
+  \opt{The revised protocol asks technicians to take duplicate samples at every
+       third visit, which has roughly doubled the time each visit takes.}
+  \opt{Calibration drift is corrected annually.}
+  \opt{Downstream reservoirs trap a proportion of the load.}
+  \opt{The published figures understate the total because they omit the
+       contribution of the two ungauged tributaries entering below the station,
+       which between them drain almost a fifth of the catchment area.}
+  \opt{The team publishes its raw data.}
+\end{ibtrue}
+
+% --- matching items long enough to push the square column right ------------
+\ibrubricpeople
+\begin{ibmatch}
+  \mitem[C]{Dr Aurélie Vasseur-Lindqvist}
+  \mitem[E]{Professor Bartholomew Achterberg}
+  \mitem[A]{Ms Ng}
+  \mitem[G]{The visiting technician from Grenoble}
+  \mopt{I take the duplicate samples on every third visit.}
+  \mopt{I have argued for years that the ungauged tributaries matter more than
+        anyone is willing to admit in print.}
+  \mopt{I designed the intake structure.}
+  \mopt{I was here for the flood of 1987.}
+  \mopt{I maintain the calibration record and I am the only person who can
+        explain the gaps in it.}
+  \mopt{I publish the annual summary.}
+  \mopt{I drove up from Grenoble this morning.}
+  \mopt{I do not believe the bedload figures.}
+\end{ibmatch}
+
+\ibpagebreak
+
+% --- long wrapping stems, many in a row, to force awkward breaks -----------
+\ibaudiotext{B}{You are going to hear a second speaker, an engineer, describing
+  the reservoir management regime downstream.}
+
+\ibrubricshort
+\ibshortq[the trapping efficiency of the upper reservoir]%
+  {What single quantity does the engineer say determines how much of the
+   incoming sediment load is retained rather than passed downstream during a
+   drawdown operation?}
+\ibshortq[every seven years]{How often is a full drawdown carried out?}
+\ibshortq[because the downstream fishery objects]%
+  {Why is the operation not carried out more frequently, despite the
+   engineer's view that doing so would be better for the structure itself?}
+\ibshortq[sediment sluicing]{What is the technique called?}
+\ibshortq[the turbine intakes]%
+  {Which part of the installation is most vulnerable to abrasion when the load
+   passing through is unusually coarse, according to the engineer's account of
+   the 2019 event?}
+\ibshortq[a coffer dam]{What was installed as a temporary measure?}
+\ibshortq[roughly forty per cent]%
+  {What proportion of the original storage capacity does the engineer estimate
+   has been lost to accumulated sediment since the reservoir was commissioned?}
+
+\ibrubrictf
+\ibtfq[T: ``no realistic prospect of recovering the lost capacity'']%
+  {The engineer believes the lost storage capacity cannot realistically be
+   recovered by any method currently available at reasonable cost.}
+\ibtfq[F: ``the fishery was consulted from the outset'']%
+  {The downstream fishery was not consulted before the current regime was
+   adopted.}
+
+% --- tick table with long statements ---------------------------------------
+\ibrubricsource
+\begin{ibsource}{Whose opinion?}{Vasseur-Lindqvist}{Achterberg}{Both}
+  \srow[Both]{The published sediment figures for the catchment understate the
+    true total by a margin that matters for downstream planning.}
+  \srow[Achterberg]{The ungauged tributaries should have been instrumented
+    decades ago and the failure to do so is now difficult to defend.}
+  \srow[Vasseur-Lindqvist]{The duplicate-sampling protocol is worth the extra
+    time it costs the field team.}
+  \srow[Both]{A single high-magnitude event can dominate an entire year's
+    sediment budget.}
+\end{ibsource}
+
+\ibpagebreak
+
+% --- gap-fill with a stimulus ----------------------------------------------
+\ibaudiotext{C}{You are going to hear a summary of the station's annual report.}
+
+\ibrubricgapfill
+\ibstimcaption{Annual report summary:}
+\begin{ibstimulus}
+  \textbf{Upper Rhône gauging station --- year in review}
+
+  \begin{ibstimlist}
+    \item Total suspended load: \ibgapnext
+    \item Largest single event recorded in \ibgapnext
+    \item Instrument downtime attributed to \ibgapnext
+    \item Protocol change introduced in \ibgapnext
+  \end{ibstimlist}
+\end{ibstimulus}
+\ibgapq[1.4 million tonnes]
+\ibgapq[October]
+\ibgapq[a power failure]
+\ibgapq[the spring]
+
+\end{document}

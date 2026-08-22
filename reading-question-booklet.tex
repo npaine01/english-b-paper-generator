@@ -1,0 +1,194 @@
+%% reading-question-booklet.tex
+%% ---------------------------------------------------------------------------
+%% A complete English B HL Paper 2 reading comprehension question booklet:
+%% three texts, 37 questions, 40 marks — the shape a real HL paper takes.
+%%
+%%   tectonic -X compile reading-question-booklet.tex
+%%
+%% Compiling also writes reading-question-booklet.ans, which markscheme.tex
+%% turns into the answer key.
+%%
+%% The questions refer to reading-text-booklet.tex. Every text there is
+%% original; line and paragraph references below match it as it compiles.
+%% ---------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\usepackage{ibenglishb}
+
+\ibsetsession{QDHS\,--\,2026}
+\ibsetmaxmarks{40}
+
+\begin{document}
+
+% ═══════════════════════════════════════ COVER ═════════════════════════════
+\ibcover
+  {English B -- Higher level -- Paper 2 -- Reading comprehension}
+  {8 May 2026}
+  {1 h}
+  {\begin{ibinstructions}{Question and answer booklet -- Instructions to students}
+     \item Write your session number in the boxes above.
+     \item Do not open this examination paper until instructed to do so.
+     \item Answer all questions. Each question is allocated \textbf{[1 mark]}
+           unless otherwise stated.
+     \item Answers must be written within the answer boxes provided.
+     \item All answers must be based on the appropriate texts in the
+           accompanying text booklet.
+     \item The maximum mark for this examination paper is \textbf{[40 marks]}.
+   \end{ibinstructions}}
+  {10 pages}
+  {\ibsessioncode}
+
+% ═══════════════════════════════════════ TEXT A ════════════════════════════
+\ibtextheading{A}{The library that lends almost anything}
+
+\ibrubricshort
+\ibshortq[(how to use) a wallpaper steamer]%
+  {What is Farida Osman explaining to a stranger at the start of the text?}
+\ibshortq[(up to) a fortnight]%
+  {How long may members keep something they have borrowed?}
+\ibshortq[people living within a few streets (of the building)]%
+  {Who donated almost all of the items in the collection?}
+\ibshortq[a calculation]%
+  {According to the text, what persuaded the council to fund the expansion?}
+
+\ibrubriccomplete{\ibparas{3}{4}}
+\ibcompleteq[eleven power tools kept behind the desk]%
+  {Tomas Iversen started the collection with\dots}
+\ibcompleteq[repairs proved expensive]%
+  {The scheme to lend musical instruments ended partly because\dots}
+\ibcompleteq[belong in a lending collection]%
+  {The instruments taught Iversen something about which objects\dots}
+
+\ibturnover
+\ibpagebreak
+
+\ibrubricmcq
+\begin{ibmcq}[B]{The collection at Brookvale is made up mainly of items that
+  were\dots}
+  \opt{bought by the council.}
+  \opt{given by local people.}
+  \opt{lent by other libraries.}
+  \opt{left behind by borrowers.}
+\end{ibmcq}
+\begin{ibmcq}[D]{What does the text suggest about the musical instruments?}
+  \opt{They were rarely borrowed.}
+  \opt{They were returned damaged.}
+  \opt{They were too costly to buy.}
+  \opt{They were not suited to lending.}
+\end{ibmcq}
+\begin{ibmcq}[C]{The advice Iversen gives other librarians is best described as\dots}
+  \opt{ambitious.}
+  \opt{reluctant.}
+  \opt{cautious.}
+  \opt{uncertain.}
+\end{ibmcq}
+
+% ═══════════════════════════════════════ TEXT B ════════════════════════════
+\ibtextheading{B}{Five ways to make a new habit stick}
+
+\ibrubricfindword{\iblines{1}{14}}
+\ibfindwordq[surge]{a sudden increase}
+\ibfindwordq[dormant]{inactive}
+\ibfindwordq[fortnight]{two weeks}
+\ibfindwordq[prompted]{reminded}
+
+\ibrubricheadings
+\begin{ibmatch}
+  \mgap[B] \mgap[D] \mgap[F] \mgap[H]
+  \mopt{Reward yourself often}
+  \mopt{Attach it to something you already do}
+  \mopt{Choose a harder goal}
+  \mopt{Never miss twice}
+  \mopt{Start before you feel ready}
+  \mopt{Do it where someone will notice}
+  \mopt{Track every detail}
+  \mopt{Keep the record simple}
+\end{ibmatch}
+
+\ibturnover
+\ibpagebreak
+
+\ibrubricshort
+\ibshortq[they went about it in a way that could not last]%
+  {According to the writer, why do most people who abandon a new habit fail?}
+\ibshortq[to establish that this is something you do]%
+  {What does the writer say is the purpose of the first fortnight?}
+\ibshortq[attendance]%
+  {According to the final section, what are you recording when you mark a
+   calendar?}
+
+\ibrubricvocab
+\begin{ibmatch}
+  \mitem[A]{fragile \ibline{21}}
+  \mitem[C]{resist \ibline{26}}
+  \mitem[E]{collapse \ibline{27}}
+  \mopt{easily broken} \mopt{expensive}
+  \mopt{avoid}         \mopt{encourage}
+  \mopt{failure}       \mopt{growth}
+\end{ibmatch}
+
+% ═══════════════════════════════════════ TEXT C ════════════════════════════
+\ibtextheading{C}{An extract from \textit{The Long Way Round}}
+
+\begin{ibtrue}[A, B, D, H]{4}
+  \opt{Mirela had been told that the road was being repaired.}
+  \opt{Mirela waited at the shelter although she expected no bus.}
+  \opt{The walk to the town was uphill for most of the way.}
+  \opt{Mirela had made the same journey on foot before.}
+  \opt{The dog at the Dennehy place did not recognise her.}
+  \opt{Mirela's mother wrote to her about the family shop.}
+  \opt{Mirela expected to reach the town later than she had planned.}
+  \opt{Mirela did not want to explain her journey to other people.}
+\end{ibtrue}
+
+\ibturnover
+\ibpagebreak
+
+\ibrubrictf
+\ibtfq[F: ``she had known it would not'']%
+  {Mirela was surprised when the bus failed to arrive.}
+\ibtfq[F: ``came to the gate and did not bark'']%
+  {The dog at the Dennehy place barked as she went past.}
+\ibtfq[T: ``accurate about the surface and silent about everything underneath'']%
+  {Mirela thought her mother's letters left a great deal unsaid.}
+\ibtfq[F: ``how little she intended to explain'']%
+  {Mirela planned to describe her journey to the people of the town.}
+
+\ibrubricrefer
+\ibreferq[the bus]{\dots she had known \ibu{it} would not. \ibline{1}}
+\ibreferq[the walk (to the town)]{\dots she had done \ibu{it} before\dots \ibline{7}}
+\ibreferq[the letters]{\ibu{They} never mentioned her father's brother\dots \ibline{16}}
+\ibreferq[the people of the town]{Let \ibu{them} see her come up the hill\dots \ibline{21}}
+
+\ibturnover
+\ibpagebreak
+
+\ibrubricmcq
+\begin{ibmcq}[C]{Mirela stood at the bus shelter because\dots}
+  \opt{she thought the driver might have been wrong.}
+  \opt{she wanted to speak to the other passengers.}
+  \opt{leaving the house made the day feel normal.}
+  \opt{the road had only just been closed.}
+\end{ibmcq}
+\begin{ibmcq}[B]{``a kind of weather report'' \ibline{15} suggests that the
+  letters were\dots}
+  \opt{written in a hurry.}
+  \opt{true but shallow.}
+  \opt{full of complaint.}
+  \opt{difficult to follow.}
+\end{ibmcq}
+\begin{ibmcq}[D]{Why is Mirela not sorry that the lorry drove past?}
+  \opt{She had already rested at the crossroads.}
+  \opt{She did not recognise the driver.}
+  \opt{She knew she would arrive early anyway.}
+  \opt{She wanted to arrive on foot.}
+\end{ibmcq}
+\begin{ibmcq}[A]{In this passage, Mirela is best described as\dots}
+  \opt{self-possessed.}
+  \opt{resentful.}
+  \opt{anxious.}
+  \opt{carefree.}
+\end{ibmcq}
+
+\ibblankpage
+
+\end{document}

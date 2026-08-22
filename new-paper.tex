@@ -1,0 +1,122 @@
+%% new-paper.tex — START HERE
+%% ---------------------------------------------------------------------------
+%% A skeleton reading paper. Replace the questions with your own, then:
+%%
+%%     tectonic -X compile new-paper.tex
+%%
+%% Rules to remember:
+%%   • Never type a question number. They number themselves, in source order.
+%%   • The [square brackets] after each macro name are the ANSWER. It is never
+%%     printed — it goes into new-paper.ans for the markscheme.
+%%   • Set \ibsetmaxmarks to the total you intend. If the questions don't add
+%%     up, the build warns you at the end.
+%%   • Matching blocks and true-statement questions need exactly twice as many
+%%     options as items/marks. The build warns you if they don't.
+%%
+%% Every question type is in specimens.tex if you need one that isn't here.
+%% ---------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\usepackage{ibenglishb}          % add [answers] to print the answers in red
+
+\ibsetsession{QDHS\,--\,2026}    % code printed top-right on every page
+\ibsetmaxmarks{20}               % the skeleton below totals 20 marks.
+                                 % Change to 40 (HL reading) or 25 (HL
+                                 % listening) once the paper is written;
+                                 % `make check` tells you when it matches.
+
+\begin{document}
+
+% ═══════════════════════════════════════ COVER ═════════════════════════════
+\ibcover
+  {English B -- Higher level -- Paper 2 -- Reading comprehension}
+  {Date goes here}
+  {1 h}
+  {\begin{ibinstructions}{Question and answer booklet -- Instructions to students}
+     \item Write your session number in the boxes above.
+     \item Do not open this examination paper until instructed to do so.
+     \item Answer all questions. Each question is allocated \textbf{[1 mark]}
+           unless otherwise stated.
+     \item Answers must be written within the answer boxes provided.
+     \item All answers must be based on the appropriate texts in the
+           accompanying text booklet.
+     \item The maximum mark for this examination paper is \textbf{[40 marks]}.
+   \end{ibinstructions}}
+  {7 pages}
+  {\ibsessioncode}
+
+% ═══════════════════════════════════════ TEXT A ════════════════════════════
+\ibtextheading{A}{Headline of your first text}
+
+% --- short answer ----------------------------------------------------------
+\ibrubricshort
+\ibshortq[the answer]{Your question here?}
+\ibshortq[the answer]{Your question here?}
+
+% --- complete the sentence from the text -----------------------------------
+% \ibparas{3}{4} prints "paragraphs [3]–[4]"; use \iblines{12}{23} instead if
+% the text booklet is numbered by line.
+\ibrubriccomplete{\ibparas{3}{4}}
+\ibcompleteq[quoted words from the text]{A paraphrased sentence opening\dots}
+
+% --- multiple choice (four options for reading, three for listening) --------
+\ibrubricmcq
+\begin{ibmcq}[C]{Your question here?}
+  \opt{First option}
+  \opt{Second option}
+  \opt{Third option}
+  \opt{Fourth option}
+\end{ibmcq}
+
+\ibturnover        % prints "Turn over" at the foot of the page being finished
+\clearpage
+
+% ═══════════════════════════════════════ TEXT B ════════════════════════════
+\ibtextheading{B}{Headline of your second text}
+
+% --- find the word ---------------------------------------------------------
+\ibrubricfindword{\iblines{1}{15}}
+\ibfindwordq[word from the text]{definition}
+\ibfindwordq[word from the text]{definition}
+
+% --- matching headings: \mgap numbers itself and prints [ – n – ] -----------
+% Put the same [ – n – ] markers in the text booklet where the headings were.
+\ibrubricheadings
+\begin{ibmatch}
+  \mgap[E] \mgap[B] \mgap[G] \mgap[C]
+  \mopt{Heading A} \mopt{Heading B} \mopt{Heading C} \mopt{Heading D}
+  \mopt{Heading E} \mopt{Heading F} \mopt{Heading G} \mopt{Heading H}
+\end{ibmatch}
+
+% --- matching vocabulary: \mitem carries its own left-hand text -------------
+\ibrubricvocab
+\begin{ibmatch}
+  \mitem[C]{word \ibline{31}}
+  \mitem[E]{word \ibline{38}}
+  \mitem[A]{word \ibline{41}}
+  \mopt{gloss A} \mopt{gloss B} \mopt{gloss C}
+  \mopt{gloss D} \mopt{gloss E} \mopt{gloss F}
+\end{ibmatch}
+
+\clearpage
+
+% ═══════════════════════════════════════ TEXT C ════════════════════════════
+\ibtextheading{C}{An extract from \textit{Your literary text}}
+
+% --- identify true statements: n marks, 2n options, one question number -----
+\begin{ibtrue}[A, B, D, H]{4}
+  \opt{Statement A} \opt{Statement B} \opt{Statement C} \opt{Statement D}
+  \opt{Statement E} \opt{Statement F} \opt{Statement G} \opt{Statement H}
+\end{ibtrue}
+
+% --- true / false with justification ---------------------------------------
+\ibrubrictf
+\ibtfq[T: ``quotation from the text'']{Your statement here.}
+\ibtfq[F: ``quotation from the text'']{Your statement here.}
+
+% --- what the underlined words refer to ------------------------------------
+\ibrubricrefer
+\ibreferq[the referent]{\dots quoted phrase with \ibu{the word} underlined\dots\ \ibline{15}}
+
+\ibblankpage      % "Please do not write on this page."
+
+\end{document}

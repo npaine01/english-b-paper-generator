@@ -1,0 +1,1179 @@
+%% ibenglishb.sty — IB Diploma English B Paper 2 question formats
+%% ---------------------------------------------------------------------------
+%% Reproduces the layout of the IB English B (HL/SL) Paper 2 question booklets:
+%% reading comprehension and listening comprehension.
+%%
+%% All geometry below was measured off the vector PDFs of the 2023–2026 papers.
+%% Millimetre values in comments are absolute positions on the A4 page; the
+%% lengths themselves are offsets from the left margin (15 mm).
+%%
+%% Engines: XeLaTeX / LuaLaTeX (uses real Arial) or pdfLaTeX (Helvetica clone).
+%% ---------------------------------------------------------------------------
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{ibenglishb}[2026/08/21 v1.0 IB English B Paper 2 question formats]
+
+\RequirePackage{kvoptions}
+\SetupKeyvalOptions{family=ibeb,prefix=ibeb@}
+\DeclareStringOption[reading]{paper}      % reading | listening
+\DeclareStringOption[arial]{font}         % arial | heros
+\DeclareBoolOption[false]{answers}        % print answers inline (proof mode)
+\DeclareBoolOption[false]{nogeometry}     % caller supplies its own geometry
+\DeclareBoolOption[true]{decorations}     % load TikZ for wavy stimulus frames
+\ProcessKeyvalOptions*
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  1.  FONTS
+% ═══════════════════════════════════════════════════════════════════════════
+\RequirePackage{iftex}
+\ifPDFTeX
+  \RequirePackage[T1]{fontenc}
+  \RequirePackage[utf8]{inputenc}
+  \RequirePackage[scaled=1.0]{helvet}
+  \renewcommand\familydefault{\sfdefault}
+  \RequirePackage{textcomp}
+\else
+  \RequirePackage{fontspec}
+  \defaultfontfeatures{Ligatures=TeX}
+  \def\ibeb@arial{arial}
+  \ifx\ibeb@font\ibeb@arial
+    \IfFontExistsTF{Arial}%
+      {\setmainfont{Arial}[BoldFont=Arial Bold,ItalicFont=Arial Italic,
+                           BoldItalicFont=Arial Bold Italic]}%
+      {\PackageWarning{ibenglishb}{Arial not found; using TeX Gyre Heros}%
+       \setmainfont{TeX Gyre Heros}}%
+  \else
+    \setmainfont{TeX Gyre Heros}
+  \fi
+\fi
+
+% The IB body font is Arial 11 pt on a 13.4 pt baseline.  The 11pt class option
+% actually yields 10.95 pt, so pin the size explicitly.
+\renewcommand\normalsize{%
+  \@setfontsize\normalsize{11}{13.25}%
+  \abovedisplayskip 11\p@ \@plus3\p@ \@minus6\p@
+  \belowdisplayskip \abovedisplayskip
+  \abovedisplayshortskip \z@ \@plus3\p@
+  \belowdisplayshortskip \abovedisplayskip}
+\AtBeginDocument{\normalsize}
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  2.  PAGE GEOMETRY
+%      Live text block runs x = 15.0 → 195.2 mm, i.e. 180.2 mm wide.
+% ═══════════════════════════════════════════════════════════════════════════
+\ifibeb@nogeometry\else
+  \RequirePackage[a4paper,
+    left=15mm, right=14.8mm, top=23.95mm, bottom=19mm,
+    headheight=5mm, headsep=4.7mm, footskip=11.51mm]{geometry}
+\fi
+
+\RequirePackage{xcolor}
+\RequirePackage{array}
+\RequirePackage{calc}
+\RequirePackage{fancyhdr}
+\RequirePackage{graphicx}
+\RequirePackage{ragged2e}
+\RequirePackage{xspace}
+\RequirePackage{url}
+\ifibeb@decorations
+  \RequirePackage{tikz}
+  \usetikzlibrary{decorations.pathmorphing}
+\fi
+
+% Paragraph behaviour: IB papers are block-set, never indented.
+\setlength\parindent{0pt}
+\setlength\parskip{0pt}
+\frenchspacing
+
+% The IB never splits a word across lines.  Checked against 4156 lines of the
+% 2022–2026 papers: every hyphenated line ending in the corpus falls at a
+% hyphen that is already in the text (URLs and pre-hyphenated compounds),
+% never at a discretionary break.  So forbid word splitting outright, but leave
+% existing hyphens as legal break points.
+% Nor does it justify: measured line endings on an image-free text page run
+% from 184.09 to 195.92 mm, and some overshoot the measure — both impossible
+% in justified setting.  Everything is ragged right.
+\newcommand\ibeb@raggedsetup{%
+  \rightskip=0pt plus 1fil\relax
+  \hyphenpenalty=10000 \exhyphenpenalty=50 }
+\ibeb@raggedsetup
+\AtBeginDocument{\ibeb@raggedsetup}
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  3.  MEASURED LENGTHS
+% ═══════════════════════════════════════════════════════════════════════════
+\newlength\ibhang          \setlength\ibhang{10mm}     % number → stem
+\newlength\ibboxside       \setlength\ibboxside{5.8mm} % answer square
+\newlength\ibruleweight    \setlength\ibruleweight{0.18mm}
+\newlength\ibletterwidth   \setlength\ibletterwidth{10mm} % "A." column
+
+% Multiple-choice / true-statement assembly (offsets from left margin)
+\newlength\ibmcqboxx       \setlength\ibmcqboxx{10.1mm}   % abs 25.1
+\newlength\ibmcqrulex      \setlength\ibmcqrulex{21.5mm}  % abs 36.5
+\newlength\ibmcqletterx    \setlength\ibmcqletterx{26.5mm}% abs 41.5
+
+% Matching assembly (offsets from left margin)
+\newlength\ibmatchboxx     \setlength\ibmatchboxx{34.1mm} % abs 49.1
+\newlength\ibmatchrulex    \setlength\ibmatchrulex{45.0mm}% abs 60.0
+\newlength\ibmatchletterx  \setlength\ibmatchletterx{50.0mm} % abs 65.0
+
+% Vertical rhythm
+\newlength\ibopgap         \setlength\ibopgap{2.36mm}  % → 7.15 mm option pitch
+\newlength\ibitemgap       \setlength\ibitemgap{5.0mm} % → 9.80 mm item pitch
+\newlength\ibboxdrop       \setlength\ibboxdrop{1.2mm} % box top below text top
+\newlength\ibrubricskip    \setlength\ibrubricskip{4.625mm}
+\newlength\ibstemskip      \setlength\ibstemskip{3.2mm}
+\newlength\ibqskip         \setlength\ibqskip{4.9mm}
+\newlength\ibblockskip     \setlength\ibblockskip{7.0mm}
+
+% Answer areas
+\newlength\ibwboxheight    \setlength\ibwboxheight{15.01mm}
+\newlength\ibtfboxheight   \setlength\ibtfboxheight{22.24mm}
+\newlength\ibdotinset      \setlength\ibdotinset{10.8mm} % dots start, from margin
+\newlength\ibdotbase       \setlength\ibdotbase{7.53mm}  % dots BASELINE below box top
+\newlength\ibgapboxwidth   \setlength\ibgapboxwidth{150.2mm}
+\newlength\ibgapboxx       \setlength\ibgapboxx{29.9mm}  % box left, from margin
+\newlength\ibstemtobox     \setlength\ibstemtobox{4.39mm}% stem baseline → box top
+\newlength\ibboxtoqskip    \setlength\ibboxtoqskip{4.6mm}
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  4.  COUNTERS AND MARK ACCOUNTING
+% ═══════════════════════════════════════════════════════════════════════════
+\newcounter{ibq}            % running question number
+\newcounter{ibmarks}        % running mark total for the paper
+\newcounter{ibtextmarks}    % running mark total for the current text
+\newcounter{ibopt}          % option letter within the current list
+\newcounter{ibboxcount}
+
+\newcommand\ibmaxmarks{40}
+\newcommand\ibsetmaxmarks[1]{\renewcommand\ibmaxmarks{#1}}
+
+% --- answer capture ---------------------------------------------------------
+% Every question writes one row to \jobname.ans:
+%     \ibanswerrow{<q>}{<answer>}{<marks>}{<type>}
+% markscheme.tex reads that file straight into the IB five-column table.
+\newwrite\ibeb@ans
+\newif\ifibeb@ansopen \ibeb@ansopenfalse
+\begingroup\catcode`\%=12\relax\gdef\ibeb@pct{%}\endgroup
+\AtBeginDocument{%
+  \immediate\openout\ibeb@ans=\jobname.ans\relax
+  \ibeb@ansopentrue
+  \immediate\write\ibeb@ans{\ibeb@pct\space answers for \jobname\space (ibenglishb.sty)}%
+}
+\AtEndDocument{%
+  \ibeb@gapvalidate
+  \ibeb@closesection
+  \ifibeb@ansopen
+    \immediate\write\ibeb@ans{\string\ibanswertotal{\arabic{ibmarks}}}%
+    \immediate\closeout\ibeb@ans
+  \fi
+  \PackageInfo{ibenglishb}{Paper totals: \arabic{ibq} questions,
+    \arabic{ibmarks} marks (declared maximum \ibmaxmarks)}%
+  \ifnum\arabic{ibmarks}=\ibmaxmarks\else
+    \PackageWarningNoLine{ibenglishb}{Mark total is \arabic{ibmarks},
+      but the declared maximum is \ibmaxmarks}%
+  \fi
+}
+\newcommand\ibeb@record[3]{% {answer}{marks}{type}
+  \ifibeb@ansopen
+    \immediate\write\ibeb@ans{\string\ibanswerrow{\arabic{ibq}}{\unexpanded{#1}}{#2}{#3}}%
+  \fi
+}
+% The markscheme is one table per text, each with its own total, so the .ans
+% file records where each text begins and what it was worth.
+\newif\ifibeb@insection \ibeb@insectionfalse
+\newcommand\ibeb@closesection{%
+  \ifibeb@insection
+    \ifibeb@ansopen
+      \immediate\write\ibeb@ans{\string\ibanswersubtotal{\arabic{ibtextmarks}}}%
+    \fi
+    \global\ibeb@insectionfalse
+  \fi}
+\newcommand\ibeb@opensection[1]{%
+  \ibeb@closesection
+  \setcounter{ibtextmarks}{0}%
+  \global\ibeb@insectiontrue
+  \ifibeb@ansopen
+    \immediate\write\ibeb@ans{\string\ibanswersection{\unexpanded{#1}}}%
+  \fi}
+
+% Advance the counters and log one question.
+\newcommand\ibeb@newq[3]{% {answer}{marks}{type}
+  \stepcounter{ibq}%
+  \addtocounter{ibmarks}{#2}\addtocounter{ibtextmarks}{#2}%
+  \ibeb@record{#1}{#2}{#3}%
+}
+% Inline answer, shown only in proof mode.
+\newcommand\ibeb@show[1]{%
+  \ifibeb@answers\ifx\relax#1\relax\else
+    \hspace{2mm}\textcolor{red}{\bfseries\small[#1]}%
+  \fi\fi
+}
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  5.  RUBRIC STRINGS  (redefine any of these to lock a house variant)
+% ═══════════════════════════════════════════════════════════════════════════
+\newcommand\ibstr@mcq{Choose the correct answer.}
+\newcommand\ibstr@matchq{Choose an appropriate question from the list that completes each gap in the text.}
+\newcommand\ibstr@headings{Choose an appropriate heading from the list that completes each gap in the text.}
+\newcommand\ibstr@vocab{What do the following words mean in the text? Choose the appropriate word from the list.}
+\newcommand\ibstr@people{Choose the appropriate statement from the list for each person.}
+\newcommand\ibstr@halves{Choose an appropriate ending from the list that completes each sentence.}
+\newcommand\ibstr@gapsummary{Choose the appropriate word from the list that completes each gap in the following text.}
+\newcommand\ibstr@short{Answer the following questions.}
+\newcommand\ibstr@shortone{Answer the following question.}
+\newcommand\ibstr@findword[1]{Find the word or phrase in #1 which means the following:}
+\newcommand\ibstr@tf{The following statements are either true or false. Tick [\,\ibtick\,] the correct option, then justify it using words as they appear in the text. \textbf{Both} parts are required for \textbf{[1 mark]}.}
+\newcommand\ibstr@complete[1]{Find the words that complete the following sentences. Answer using the words as they appear in #1.}
+\newcommand\ibstr@refer{To whom or to what do the underlined words refer? Answer using words as they appear in the text.}
+\newcommand\ibstr@source{Tick [\,\ibtick\,] \textbf{one} correct option for each of the following statements.}
+\newcommand\ibstr@gapfill{Complete the following gaps. Use no more than three words for each gap.}
+
+\newcommand\ibsetrubric[2]{\expandafter\renewcommand\csname ibstr@#1\endcsname{#2}}
+
+% Emit a rubric line.
+% A rubric is welded to the questions it introduces, and cannot break inside
+% itself either: the longer ones run to two lines and must not straddle a page.
+\newcommand\ibeb@rubric[1]{%
+  \par
+  \begingroup\interlinepenalty\@M
+    \noindent#1\par
+  \endgroup
+  \nobreak\vspace{\ibrubricskip}\nobreak}
+\newcommand\ibrubricmcq{\ibeb@rubric{\ibstr@mcq}}
+\newcommand\ibrubricmatchq{\ibeb@rubric{\ibstr@matchq}}
+\newcommand\ibrubricheadings{\ibeb@rubric{\ibstr@headings}}
+\newcommand\ibrubricvocab{\ibeb@rubric{\ibstr@vocab}}
+\newcommand\ibrubricpeople{\ibeb@rubric{\ibstr@people}}
+\newcommand\ibrubrichalves{\ibeb@rubric{\ibstr@halves}}
+\newcommand\ibrubricgapsummary{\ibeb@rubric{\ibstr@gapsummary}}
+\newcommand\ibrubricshort{\ibeb@rubric{\ibstr@short}}
+\newcommand\ibrubricshortone{\ibeb@rubric{\ibstr@shortone}}
+\newcommand\ibrubricfindword[1]{\ibeb@rubric{\ibstr@findword{#1}}}
+\newcommand\ibrubrictf{\ibeb@rubric{\ibstr@tf}}
+\newcommand\ibrubriccomplete[1]{\ibeb@rubric{\ibstr@complete{#1}}}
+\newcommand\ibrubricrefer{\ibeb@rubric{\ibstr@refer}}
+\newcommand\ibrubricsource{\ibeb@rubric{\ibstr@source}}
+\newcommand\ibrubricgapfill{\ibeb@rubric{\ibstr@gapfill}}
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  6.  TYPOGRAPHIC PRIMITIVES
+% ═══════════════════════════════════════════════════════════════════════════
+% A tick, for the Tick [✓] rubrics.
+\RequirePackage{pifont}
+\newcommand\ibtick{\raisebox{-0.2ex}{\small\ding{51}}}
+
+% Gap marker:  [ – 7 – ]   (bold, non-breaking, spaced en dashes)
+\newcommand\ibgap[1]{\textbf{[\nobreakspace--\nobreakspace#1\nobreakspace--\nobreakspace]}}
+
+% Reverse-video paragraph badge, as printed beside the text booklet paragraphs.
+% Set in a fixed 4 mm cell so successive paragraph numbers line up.
+\newlength\ibbadgewidth \setlength\ibbadgewidth{4mm}
+\newcommand\ibbadge[1]{%
+  \begingroup
+    \setlength\fboxsep{0pt}%
+    \colorbox{black}{\makebox[\ibbadgewidth][c]{%
+      \textcolor{white}{\fontsize{9.5}{9.5}\selectfont\bfseries
+        \rule[-0.6mm]{0pt}{4.1mm}#1}}}%
+  \endgroup}
+
+% Range references used inside rubrics and stems.
+\newcommand\ibpara[1]{\textbf{paragraph\,\ibbadge{#1}}}
+\newcommand\ibparas[2]{\textbf{paragraphs\,\ibbadge{#1}--\ibbadge{#2}}}
+\newcommand\iblines[2]{\textbf{lines #1--#2}}
+\newcommand\iblinesto[2]{\textbf{lines #1 to #2}}
+\newcommand\ibline[1]{(line #1)}
+\newcommand\iblinepair[2]{(lines #1--#2)}
+\newcommand\ibu[1]{\underline{#1}}
+
+% Dotted writing leader.
+\newcommand\ibdots{\leaders\hbox to 1.55mm{\hss.\hss}\hfill}
+
+% Empty answer square.
+\newcommand\ibsquare{%
+  \fboxrule=\ibruleweight \fboxsep=-\ibruleweight
+  \framebox[\ibboxside][c]{\rule{0pt}{\ibboxside}}}
+
+% Text heading in the question booklet: "Text A — Headline"
+\newif\ifibeb@firsttext \ibeb@firsttexttrue
+% Every text starts a new page (the first one is already on one).
+\newcommand\ibeb@textbreak{%
+  \ifibeb@firsttext \global\ibeb@firsttextfalse \else \clearpage \fi}
+% Force a page break wherever the author wants one — only ever earlier than
+% LaTeX would have chosen, never later.
+\newcommand\ibpagebreak{\clearpage}
+
+\newcommand\ibtextheading[2]{%
+  \ibeb@textbreak
+  \par\vspace{\ibblockskip}%
+  \ibeb@opensection{Text #1 — #2}%
+  \noindent\textbf{Text #1 — #2}\par\vspace{\ibrubricskip}}
+% Listening: bold text label plus the bold scene-setting line.
+\newcommand\ibaudiotext[2]{%
+  \ibeb@textbreak
+  \par\vspace{\ibblockskip}%
+  \ibeb@opensection{Text #1}%
+  \noindent\textbf{Text #1}\par\vspace{4.62mm}%
+  \noindent\textbf{#2}\par\vspace{\ibrubricskip}}
+
+% Question stem: bold number in a 10 mm hanging column, stem beside it.
+\newcommand\ibeb@stem[2]{% {number}{stem}
+  \par\noindent
+  \hbox to \ibhang{\textbf{#1.}\hfil}%
+  \parbox[t]{\dimexpr\textwidth-\ibhang\relax}{\ibeb@raggedsetup\strut #2\strut}%
+  \par}
+% Stem with a flush-right mark tag.
+\newcommand\ibeb@stemmarks[3]{% {number}{stem}{marks}
+  \par\noindent
+  \hbox to \ibhang{\textbf{#1.}\hfil}%
+  \parbox[t]{\dimexpr\textwidth-\ibhang\relax}{\ibeb@raggedsetup\strut #2\hfill[#3]\strut}%
+  \par}
+
+% A framed area whose OUTER dimensions are exactly {height}{width}.  The body
+% is vertical material; place each writing line in it with \ibat, which puts a
+% baseline at an exact depth below the frame's inner top and takes up no
+% vertical space itself, so several lines can be positioned independently.
+\newcommand\ibeb@frame[3]{%
+  \begingroup
+    \setlength\fboxrule{\ibruleweight}\setlength\fboxsep{0pt}%
+    \fbox{\vbox to \dimexpr#1-2\fboxrule\relax{%
+      \hsize\dimexpr#2-2\fboxrule\relax
+      \offinterlineskip
+      #3\vss}}%
+  \endgroup}
+
+% \ibat{<depth>}{<horizontal material>} — baseline at <depth> below inner top.
+\newcommand\ibat[2]{%
+  \vbox to \z@{%
+    \vskip#1\relax
+    \hbox to \hsize{\raisebox{\z@}[\z@][\z@]{#2}\hss}%
+    \vss}}
+
+% Put the top of a framed box an exact distance below the baseline of the stem
+% above it, whatever descenders that stem happened to have.
+\newlength\ibeb@pd
+\newcommand\ibeb@boxafterstem{%
+  \par
+  \nobreak                      % no page break between a stem and its box
+  \nointerlineskip
+  \vskip\dimexpr\ibstemtobox-\dp\strutbox-0.5\ibruleweight\relax
+  \nobreak}
+
+% Put the next line's baseline an exact distance below the previous one,
+% whatever descenders the previous line had.  Using plain \vskip leaves TeX
+% free to fall back on \lineskip when the two lines nearly touch, which
+% silently shortens the gap.
+% The line that follows must begin with \strut.
+\newcommand\ibeb@baselineat[1]{%
+  \par\nobreak\nointerlineskip
+  \vskip\dimexpr#1-\dp\strutbox-\ht\strutbox\relax
+  \nobreak}
+
+% One dotted writing line: {inset from the frame's left edge}{length of run}.
+\newcommand\ibeb@dotline[2]{\hspace*{#1}\hbox to #2{\ibdots}}
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  7.  ANSWER AREAS
+%      Measured off the 2025 papers: box 14.82 mm tall, its top 4.39 mm below
+%      the stem baseline, the dotted line's baseline 7.53 mm below the box top
+%      — i.e. the writing line sits on the box's centre, not near its top.
+% ═══════════════════════════════════════════════════════════════════════════
+\newcommand\ibwritebox{%
+  \ibeb@boxafterstem
+  \noindent
+  \ibeb@frame{\ibwboxheight}{\textwidth}{%
+    \ibat{\dimexpr\ibdotbase-0.5\ibruleweight\relax}{%
+      \ibeb@dotline{\dimexpr\ibdotinset-\ibruleweight\relax}%
+        {\dimexpr\textwidth-\ibdotinset-8mm\relax}}}%
+  \par\vskip\ibboxtoqskip}
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  8.  THE BOX-AND-RULE ENGINE
+%
+%  Every choice-based question in the paper is the same assembly:
+%
+%      [ n stacked squares ] │ [ a lettered option list ]
+%
+%  and every matching question adds a numbered item column to the left of the
+%  squares.  Rows are accumulated as token lists and typeset once at the end of
+%  the environment, so the square column can be positioned from the measured
+%  width of the item column — which is how the IB places it.
+% ═══════════════════════════════════════════════════════════════════════════
+\newcommand\ibeb@items{}
+\newcommand\ibeb@opts{}
+\newcounter{ibeb@nitems}
+\newcounter{ibeb@rown}
+% the document's normal leading, used to convert a baseline pitch into the skip
+% that must sit between two boxes
+\newlength\ibeb@normalbs
+\newlength\ibeb@strutht
+\AtBeginDocument{%
+  \setlength\ibeb@normalbs{\baselineskip}%
+  \setlength\ibeb@strutht{\ht\strutbox}}
+\newlength\ibeb@maxw
+\newlength\ibeb@tmpw
+\newlength\ibeb@leftw
+\newlength\ibeb@optw
+\newlength\ibeb@boxx
+\newlength\ibeb@rulex
+\newlength\ibeb@letterx
+\newlength\ibeb@ruleht
+\newsavebox\ibeb@leftbox
+\newsavebox\ibeb@optbox
+
+% Append to an accumulator, expanding counters but not user text.
+\newcommand\ibeb@add[2]{%
+  \begingroup
+    \edef\ibeb@x{\endgroup\noexpand\g@addto@macro\noexpand#1{#2}}%
+  \ibeb@x}
+
+\newcommand\ibeb@resetrows{%
+  \gdef\ibeb@items{}\gdef\ibeb@opts{}%
+  \setcounter{ibeb@nitems}{0}\setcounter{ibopt}{0}}
+
+% --- one lettered option ---------------------------------------------------
+% \opt is shared by multiple choice, true statements and every matching type.
+\newcommand\opt[1]{%
+  \stepcounter{ibopt}%
+  \ibeb@add\ibeb@opts{\noexpand\ibeb@optrow{\Alph{ibopt}}{\unexpanded{#1}}}}
+\let\mopt\opt
+
+% --- one numbered item in the left-hand column ------------------------------
+\newcommand\mgap[1][]{%
+  \ibeb@newq{#1}{1}{match}\stepcounter{ibeb@nitems}%
+  \ibeb@add\ibeb@items{%
+    \noexpand\ibeb@itemrow{\arabic{ibq}}%
+      {\noexpand\ibgap{\arabic{ibq}}\noexpand\ibeb@show{\unexpanded{#1}}}}}
+\newcommand\mitem[2][]{%
+  \ibeb@newq{#1}{1}{match}\stepcounter{ibeb@nitems}%
+  \ibeb@add\ibeb@items{%
+    \noexpand\ibeb@itemrow{\arabic{ibq}}%
+      {\unexpanded{#2}\noexpand\ibeb@show{\unexpanded{#1}}}}}
+
+% --- rendering --------------------------------------------------------------
+% Measure the natural width of the widest item (excluding its number column).
+\newcommand\ibeb@measureitems{%
+  \setlength\ibeb@maxw{0pt}%
+  \def\ibeb@itemrow##1##2{%
+    \settowidth\ibeb@tmpw{##2}%
+    \ifdim\ibeb@tmpw>\ibeb@maxw \setlength\ibeb@maxw{\ibeb@tmpw}\fi}%
+  \ibeb@items}
+
+% Build the item column.  The IB measures its pitch from the LAST line of one
+% row to the FIRST line of the next, so a row that wraps pushes the following
+% row down by a full pitch rather than crowding it.  Struts fix each row's
+% height and depth, so the skip between rows is a constant.
+\newcommand\ibeb@builditems{%
+  \setlength\ibeb@leftw{\dimexpr\ibeb@boxx+\ibboxside\relax}%
+  \setcounter{ibeb@rown}{0}%
+  \def\ibeb@itemrow##1##2{%
+    \ifnum\value{ibeb@rown}>0
+      \vskip\dimexpr\ibitempitch-\ibeb@normalbs\relax
+    \fi
+    \stepcounter{ibeb@rown}%
+    \hbox to \ibeb@leftw{%
+      \hbox to \ibhang{\strut\textbf{##1.}\hfil}%
+      \vtop{\hsize=\dimexpr\ibeb@leftw-\ibhang-\ibboxside\relax
+            \baselineskip=\ibeb@normalbs \lineskip=\z@ \lineskiplimit=-\maxdimen
+            \noindent\ibeb@raggedsetup\strut ##2\strut\par}%
+      \hfil
+      \raisebox{\ibeb@rowsquareraise}[\z@][\z@]{\ibsquare}}}%
+  \sbox\ibeb@leftbox{%
+    \vtop{\hsize=\ibeb@leftw \offinterlineskip \ibeb@items}}}
+
+% Build the option column on the same principle: 7.15 mm from the last line of
+% one option to the first line of the next, normal leading inside an option.
+\newcommand\ibeb@buildopts{%
+  \setlength\ibeb@optw{\dimexpr\textwidth-\ibeb@letterx\relax}%
+  \setcounter{ibeb@rown}{0}%
+  \def\ibeb@optrow##1##2{%
+    \ifnum\value{ibeb@rown}>0
+      \vskip\dimexpr\iboptpitch-\ibeb@normalbs\relax
+    \fi
+    \stepcounter{ibeb@rown}%
+    \hbox to \ibeb@optw{%
+      \hbox to \ibletterwidth{\strut\textbf{##1.}\hfil}%
+      \vtop{\hsize=\dimexpr\ibeb@optw-\ibletterwidth\relax
+            \baselineskip=\ibeb@normalbs \lineskip=\z@ \lineskiplimit=-\maxdimen
+            \noindent\ibeb@raggedsetup\strut ##2\strut\par}\hfil}}%
+  \sbox\ibeb@optbox{%
+    \vtop{\hsize=\ibeb@optw \offinterlineskip \ibeb@opts}}}
+
+% Stack of n squares on their own pitch.
+\newcommand\ibeb@squarestack[2]{% {count}{pitch}
+  \vtop{\hsize=\ibboxside
+    \baselineskip=#2 \lineskip=0pt \lineskiplimit=0pt
+    \setcounter{ibboxcount}{0}%
+    \loop\ifnum\value{ibboxcount}<#1
+      \stepcounter{ibboxcount}%
+      \hbox{\ibsquare}%
+    \repeat}}
+
+% Final assembly.  Columns are placed with \rlap at absolute offsets from the
+% left margin, so rounding never accumulates into an overfull line.
+%   #1 = number of squares, #2 = square pitch,
+%   #3 = T when there is an item column to the left of the squares.
+\newcommand\ibeb@assemble[3]{%
+  \par\nobreak\vspace{\ibstemskip}\nobreak
+  \setlength\ibeb@ruleht{\dimexpr\ht\ibeb@optbox+\dp\ibeb@optbox+3.9mm\relax}%
+  \if#3T%
+    \setlength\ibeb@tmpw{\dimexpr\ht\ibeb@leftbox+\dp\ibeb@leftbox
+                                 +\ibmatchitemdrop+3.9mm\relax}%
+    \ifdim\ibeb@tmpw>\ibeb@ruleht \setlength\ibeb@ruleht{\ibeb@tmpw}\fi
+  \fi
+  \noindent
+  \if#3T%
+    \rlap{\raisebox{-\ibmatchitemdrop}[0pt][0pt]{\usebox\ibeb@leftbox}}%
+  \else
+    \rlap{\hspace*{\ibeb@boxx}%
+      \raisebox{\ibeb@squareraise}[0pt][0pt]{\ibeb@squarestack{#1}{#2}}}%
+  \fi
+  \rlap{\hspace*{\ibeb@rulex}%
+    \raisebox{\dimexpr-\dp\ibeb@optbox-2.5mm\relax}[0pt][0pt]{%
+      \rule{\ibruleweight}{\ibeb@ruleht}}}%
+  \hspace*{\ibeb@letterx}%
+  \usebox\ibeb@optbox
+  \par\vspace{\ibqskip}}
+
+% Squares hang below the baseline of the text they belong to.  The IB uses two
+% different drops: one for squares that sit beside an option list, and a
+% shallower one for squares that sit on a row of their own (matching items and
+% the True/False ticks).  Both measured off the 2024/2025 papers.
+\newcommand\ibeb@squareraise{-3.09mm}     % beside an option list
+\newcommand\ibeb@rowsquareraise{-1.49mm}  % on its own row
+% Matching item rows start 1.6 mm lower than the option list (measured).
+\newcommand\ibmatchitemdrop{1.6mm}
+
+% Baseline grids, exposed so a house style can retune them.
+\newcommand\iboptpitch{7.15mm}
+\newcommand\ibitempitch{9.8mm}
+\newcommand\ibnormalbaseline{13.25pt}
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  R1 / L1 — MULTIPLE CHOICE
+%     Reading: four options A–D.  Listening: three options A–C.
+% ═══════════════════════════════════════════════════════════════════════════
+\newenvironment{ibmcq}[2][]%
+  {\ibeb@resetrows
+   \ibeb@newq{#1}{1}{mcq}%
+   \ibeb@stem{\arabic{ibq}}{#2\ibeb@show{#1}}}%
+  {\setlength\ibeb@boxx{\ibmcqboxx}%
+   \setlength\ibeb@rulex{\ibmcqrulex}%
+   \setlength\ibeb@letterx{\ibmcqletterx}%
+   \ibeb@buildopts
+   \ibeb@assemble{1}{\ibitempitch}{F}}
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  R2 / L2 — IDENTIFY TRUE STATEMENTS
+%     One question number, n marks, 2n options, n stacked squares.
+% ═══════════════════════════════════════════════════════════════════════════
+\newcommand\ibeb@numword[1]{%
+  \ifcase#1\or one\or two\or three\or four\or five\or six\or seven\or eight\else
+  \number#1\fi}
+\newcounter{ibeb@truen}
+\newenvironment{ibtrue}[2][]%
+  {\ibeb@resetrows
+   \setcounter{ibeb@truen}{#2}%
+   \ibeb@newq{#1}{#2}{true}%
+   \ibeb@stemmarks{\arabic{ibq}}%
+     {Choose the \textbf{\ibeb@numword{#2}} true statements.\ibeb@show{#1}}{#2}}%
+  {\setlength\ibeb@boxx{\ibmcqboxx}%
+   \setlength\ibeb@rulex{\ibmcqrulex}%
+   \setlength\ibeb@letterx{\ibmcqletterx}%
+   \ibeb@buildopts
+   \ifnum\value{ibopt}=\numexpr2*\value{ibeb@truen}\relax\else
+     \PackageWarning{ibenglishb}{Question \arabic{ibq}: \arabic{ibopt} options
+       for \arabic{ibeb@truen} true statements; the IB always uses twice as
+       many options as marks}%
+   \fi
+   \ibeb@assemble{\value{ibeb@truen}}{\ibitempitch}{F}}
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  R3–R8 — THE MATCHING FAMILY
+%
+%     \mgap[answer]         an auto-numbered [ – n – ] item
+%     \mitem[answer]{text}  an item with its own left-hand text
+%     \mopt{text}           one lettered option  (order relative to items is
+%                           irrelevant; the two columns accumulate separately)
+% ═══════════════════════════════════════════════════════════════════════════
+\newlength\ibmatchgap  \setlength\ibmatchgap{4mm}  % item text → square
+
+\newenvironment{ibmatch}%
+  {\ibeb@resetrows}%
+  {\ibeb@measureitems
+   % Place the square column just clear of the widest item, but never left of
+   % the IB's usual position.
+   \setlength\ibeb@boxx{\dimexpr\ibhang+\ibeb@maxw+\ibmatchgap\relax}%
+   \ifdim\ibeb@boxx<\ibmatchboxx \setlength\ibeb@boxx{\ibmatchboxx}\fi
+   \setlength\ibeb@rulex{\dimexpr\ibeb@boxx+\ibboxside+5.1mm\relax}%
+   \setlength\ibeb@letterx{\dimexpr\ibeb@rulex+5.0mm\relax}%
+   \ibeb@builditems
+   \ibeb@buildopts
+   \ifnum\value{ibopt}=\numexpr2*\value{ibeb@nitems}\relax\else
+     \PackageWarning{ibenglishb}{Matching block ending at question
+       \arabic{ibq}: \arabic{ibopt} options for \arabic{ibeb@nitems} items;
+       the IB always uses twice as many options as items}%
+   \fi
+   \ibeb@assemble{\value{ibeb@nitems}}{\ibitempitch}{T}%
+   \par\vspace{\dimexpr\ibblockskip-\ibqskip\relax}}
+
+% R8 needs its stimulus summary above the matching block.
+\newcommand\ibsummary[1]{%
+  \par\noindent\hspace*{\ibhang}%
+  \parbox[t]{\dimexpr\textwidth-\ibhang\relax}{#1}%
+  \par\vspace{\ibrubricskip}}
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  R9 / L4, R10, R12, R13 — WRITTEN-ANSWER QUESTIONS
+%     Identical geometry; separate names so the markscheme records the type.
+% ═══════════════════════════════════════════════════════════════════════════
+\newcommand\ibeb@written[3]{% {answer}{stem}{type}
+  \ibeb@newq{#1}{1}{#3}%
+  \ibeb@stem{\arabic{ibq}}{#2\ibeb@show{#1}}%
+  \ibwritebox}
+
+\newcommand\ibshortq[2][]{\ibeb@written{#1}{#2}{short}}
+\newcommand\ibfindwordq[2][]{\ibeb@written{#1}{#2}{findword}}
+\newcommand\ibcompleteq[2][]{\ibeb@written{#1}{#2}{complete}}
+\newcommand\ibreferq[2][]{\ibeb@written{#1}{#2}{refer}}
+
+% "Give two answers." variant: one question number, two marks, an (a) and a
+% (b) writing line inside a taller box.  Geometry measured off 2024 Nov
+% listening Q15: box 20.86 mm tall, (a) at 7.53 mm, (b) at 14.68 mm.
+\newlength\ibtwoboxheight \setlength\ibtwoboxheight{20.86mm}
+\newlength\ibtwolabelx    \setlength\ibtwolabelx{10.8mm}
+\newlength\ibtwodotx      \setlength\ibtwodotx{18.3mm}
+\newcommand\ibtwoay{7.53mm}
+\newcommand\ibtwoby{14.68mm}
+
+\newcommand\ibeb@subline[2]{% {baseline depth}{label}
+  \ibat{\dimexpr#1-0.5\ibruleweight\relax}{%
+    \hspace*{\dimexpr\ibtwolabelx-\ibruleweight\relax}%
+    \hbox to \dimexpr\ibtwodotx-\ibtwolabelx\relax{#2\hfil}%
+    \hbox to \dimexpr\textwidth-\ibtwodotx-8mm\relax{\ibdots}}}
+
+\NewDocumentCommand\ibshortqtwo{o o m}{%
+  \IfNoValueTF{#1}{\def\ibeb@twoans{}}{%
+    \IfNoValueTF{#2}{\def\ibeb@twoans{#1}}{\def\ibeb@twoans{(a) #1; (b) #2}}}%
+  \expandafter\ibeb@newq\expandafter{\ibeb@twoans}{2}{short2}%
+  \ibeb@stemmarks{\arabic{ibq}}%
+    {#3\expandafter\ibeb@show\expandafter{\ibeb@twoans}}{2}%
+  \ibeb@boxafterstem
+  \noindent
+  \ibeb@frame{\ibtwoboxheight}{\textwidth}{%
+    \ibeb@subline{\ibtwoay}{(a)}%
+    \ibeb@subline{\ibtwoby}{(b)}}%
+  \par\vskip\ibboxtoqskip}
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  R11 — TRUE OR FALSE WITH JUSTIFICATION
+% ═══════════════════════════════════════════════════════════════════════════
+\newlength\ibtftick   \setlength\ibtftick{10.2mm}  % tick box, from margin
+\newlength\ibtflabelx \setlength\ibtflabelx{18.29mm} % "True"/"False"
+\newlength\ibtfjustx  \setlength\ibtfjustx{37.1mm}  % "Justification:"
+\newlength\ibtfdotx   \setlength\ibtfdotx{60.4mm}   % start of the dotted runs
+% Baselines inside the box, measured down from its top.  Note that the two
+% justification lines are on a 7.23 mm pitch of their own — they are NOT
+% aligned with True and False, which sit 9.8 mm apart.
+\newcommand\ibtftruey{7.42mm}
+\newcommand\ibtffalsey{17.22mm}
+\newcommand\ibtfjustay{7.53mm}
+\newcommand\ibtfjustby{14.76mm}
+
+\newcommand\ibeb@tfrow[3]{% {baseline depth}{label}{tick?}
+  \ibat{\dimexpr#1-0.5\ibruleweight\relax}{%
+    \hspace*{\dimexpr\ibtftick-\ibruleweight\relax}%
+    \raisebox{\ibeb@rowsquareraise}[\z@][\z@]{\ibsquare}%
+    \hspace*{\dimexpr\ibtflabelx-\ibtftick-\ibboxside\relax}#2}}
+
+\newcommand\ibtfq[2][]{%
+  \ibeb@newq{#1}{1}{tf}%
+  \ibeb@stem{\arabic{ibq}}{#2\ibeb@show{#1}}%
+  \ibeb@boxafterstem
+  \noindent
+  \ibeb@frame{\ibtfboxheight}{\textwidth}{%
+    \ibeb@tfrow{\ibtftruey}{True}{}%
+    \ibeb@tfrow{\ibtffalsey}{False}{}%
+    \ibat{\dimexpr\ibtfjustay-0.5\ibruleweight\relax}{%
+      \hspace*{\dimexpr\ibtfjustx-\ibruleweight\relax}%
+      \hbox to \dimexpr\ibtfdotx-\ibtfjustx\relax{Justification:\hfil}%
+      \hbox to \dimexpr\textwidth-\ibtfdotx-8mm\relax{\ibdots}}%
+    \ibat{\dimexpr\ibtfjustby-0.5\ibruleweight\relax}{%
+      \ibeb@dotline{\dimexpr\ibtfdotx-\ibruleweight\relax}%
+        {\dimexpr\textwidth-\ibtfdotx-8mm\relax}}}%
+  \par\vskip\ibboxtoqskip}
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  L3 — MATCHING STATEMENTS WITH THEIR SOURCES  (tick table)
+%
+%     \begin{ibsource}{Whose opinion?}{Ali}{Stephanie}{Both}
+%       \srow[Ali]{The issue of social engagement ...}
+%     \end{ibsource}
+% ═══════════════════════════════════════════════════════════════════════════
+% Measured off 2023 May listening p4: three 20 mm tick columns on the right,
+% the statement column taking the rest; a rule under the header and under every
+% row; the tick squares centred vertically in their row rather than sitting on
+% a text baseline.
+\newlength\ibsrccolw   \setlength\ibsrccolw{20mm}
+\newlength\ibsrcabove  \setlength\ibsrcabove{4.93mm} % rule → statement
+\newlength\ibsrcbelow  \setlength\ibsrcbelow{4.0mm} % statement → rule
+\newlength\ibsrchead   \setlength\ibsrchead{1.64mm}  % header baseline → rule
+\newlength\ibeb@srcstmt
+\newsavebox\ibeb@srcbox
+
+% The tick columns are 20 mm in the real papers, whose source labels are short
+% ("Ali", "Both").  A longer label would overflow a fixed column, so measure
+% all three and widen the columns to fit, never below the IB's 20 mm.
+\newlength\ibeb@srchdr
+\newlength\ibeb@srccolw
+\newcommand\ibeb@srcfit[3]{%
+  \setlength\ibeb@srccolw{\ibsrccolw}%
+  \def\ibeb@do##1{%
+    \settowidth\ibeb@srchdr{\textbf{##1}}%
+    \addtolength\ibeb@srchdr{3mm}%
+    \ifdim\ibeb@srchdr>\ibeb@srccolw \setlength\ibeb@srccolw{\ibeb@srchdr}\fi}%
+  \ibeb@do{#1}\ibeb@do{#2}\ibeb@do{#3}}
+
+\newenvironment{ibsource}[4]%
+  {\ibeb@srcfit{#2}{#3}{#4}%
+   \setlength\ibeb@srcstmt{\dimexpr\textwidth-3\ibeb@srccolw\relax}%
+   \par\vspace{\ibstemskip}%
+   \noindent
+   \hbox to \textwidth{%
+     \hbox to \ibeb@srcstmt{\textbf{#1}\hfil}%
+     \hbox to \ibeb@srccolw{\hfil\textbf{#2}\hfil}%
+     \hbox to \ibeb@srccolw{\hfil\textbf{#3}\hfil}%
+     \hbox to \ibeb@srccolw{\hfil\textbf{#4}\hfil}}%
+   \par\nointerlineskip
+   \vskip\ibsrchead
+   \hrule height\ibruleweight
+   \nobreak\par\nobreak}%
+  {\par\vspace{\ibblockskip}}
+
+\newcommand\srow[2][]{%
+  \ibeb@newq{#1}{1}{source}%
+  \sbox\ibeb@srcbox{%
+    \parbox[t]{\dimexpr\ibeb@srcstmt-\ibhang-4mm\relax}{\ibeb@raggedsetup #2\ibeb@show{#1}}}%
+  \par\nobreak\nointerlineskip
+  \vskip\ibsrcabove\nobreak
+  \noindent
+  \hbox to \textwidth{%
+    \hbox to \ibhang{\textbf{\arabic{ibq}.}\hfil}%
+    \usebox\ibeb@srcbox\hfil
+    \raisebox{\ibeb@srcraise}[\z@][\z@]{%
+      \hbox{\hbox to \ibeb@srccolw{\hfil\ibsquare\hfil}%
+            \hbox to \ibeb@srccolw{\hfil\ibsquare\hfil}%
+            \hbox to \ibeb@srccolw{\hfil\ibsquare\hfil}}}}%
+  \par\nobreak\nointerlineskip
+  \vskip\ibsrcbelow\nobreak
+  \hrule height\ibruleweight
+  \nobreak\par}
+
+% Centre of the row, measured from the statement's first baseline.
+\newcommand\ibeb@srcraise{%
+  \dimexpr0.5\dimexpr\ht\ibeb@srcbox+\ibsrcabove-\dp\ibeb@srcbox-\ibsrcbelow\relax
+          -0.5\ibboxside-0.3mm\relax}
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  L5 — GAP-FILLING EXERCISE  (candidate writes the words)
+%     A simulated document, then five numbered answer boxes.
+% ═══════════════════════════════════════════════════════════════════════════
+% Bulleted list inside a stimulus, so the templates carry content only.
+\newlength\ibstimitemsep \setlength\ibstimitemsep{0.4mm}
+\newlength\ibstimtopsep  \setlength\ibstimtopsep{1mm}
+\newenvironment{ibstimlist}%
+  {\begin{list}{\textbullet}{%
+     \setlength\leftmargin{5mm}\setlength\labelwidth{3mm}%
+     \setlength\labelsep{2mm}\setlength\itemsep{\ibstimitemsep}%
+     \setlength\parsep{0pt}\setlength\topsep{\ibstimtopsep}%
+     \setlength\partopsep{0pt}}}%
+  {\end{list}}
+
+\newcommand\ibstimcaption[1]{%
+  \par\noindent\textbf{#1}\par\vspace{2.5mm}}
+
+\newcounter{ibeb@gapbase}\newcounter{ibeb@gapidx}\newcounter{ibeb@gapmade}
+% \ibgapnext prints the marker for the next gap in this stimulus, numbered from
+% the question counter, so the markers can never drift out of step with the
+% answer boxes below.
+\newcommand\ibgapnext{%
+  \stepcounter{ibeb@gapidx}%
+  \ibgap{\the\numexpr\value{ibeb@gapbase}+\value{ibeb@gapidx}\relax}\xspace}
+\newcommand\ibeb@gapvalidate{%
+  \ifnum\value{ibeb@gapidx}=\value{ibeb@gapmade}\else
+    \PackageWarning{ibenglishb}{Stimulus after question
+      \arabic{ibeb@gapbase} has \arabic{ibeb@gapidx} gap marker(s) but
+      \arabic{ibeb@gapmade} answer box(es); they must match}%
+  \fi}
+
+\newenvironment{ibstimulus}[1][plain]%
+  {\ibeb@gapvalidate
+   \setcounter{ibeb@gapbase}{\value{ibq}}%
+   \setcounter{ibeb@gapidx}{0}\setcounter{ibeb@gapmade}{0}%
+   \def\ibeb@stimstyle{#1}%
+   \par\noindent
+   \begin{lrbox}{\ibeb@leftbox}%
+   \begin{minipage}{\dimexpr\textwidth-12mm\relax}%
+   \vspace{2mm}}%
+  {\vspace{2mm}\end{minipage}\end{lrbox}%
+   \ibeb@drawstimulus
+   \par\vspace{\ibblockskip}}
+
+\newcommand\ibeb@drawstimulus{%
+  \def\ibeb@wavy{wavy}%
+  \ifx\ibeb@stimstyle\ibeb@wavy
+    \ifibeb@decorations
+      \noindent\begin{tikzpicture}
+        \node[inner sep=5mm, draw, line width=\ibruleweight,
+              decorate, decoration={snake,amplitude=0.5mm,segment length=2.6mm}]
+          {\usebox\ibeb@leftbox};
+      \end{tikzpicture}%
+    \else
+      \ibeb@plainstimulus
+    \fi
+  \else
+    \ibeb@plainstimulus
+  \fi}
+\newcommand\ibeb@plainstimulus{%
+  \begingroup
+    \fboxrule=\ibruleweight \fboxsep=5mm
+    \noindent\fbox{\usebox\ibeb@leftbox}%
+  \endgroup}
+
+% One numbered gap answer.  The IB puts the number and the [ – n – ] marker to
+% the LEFT of the box, on the same baseline as the dotted line inside it.
+% The frame's reference point is its bottom edge, so the label is raised by
+% (box height − label depth) to land on that line.
+% Depth of the label's baseline below the box top is 7.42 mm; the frame's own
+% reference point sits 0.27 mm above its outer bottom edge, so the raise that
+% lands the label on that line is 7.13 mm.
+\newcommand\ibgaplabely{7.42mm}
+\newlength\ibgaplabelraise \setlength\ibgaplabelraise{7.32mm}
+\newlength\ibgapboxsep     \setlength\ibgapboxsep{6.43mm}
+\newcommand\ibgapq[1][]{%
+  \ibeb@newq{#1}{1}{gapfill}%
+  \stepcounter{ibeb@gapmade}%
+  \par\noindent
+  \rlap{\raisebox{\ibgaplabelraise}[\z@][\z@]{%
+    \hbox to \ibgapboxx{%
+      \hbox to \ibhang{\textbf{\arabic{ibq}.}\hfil}%
+      \ibgap{\arabic{ibq}}\ibeb@show{#1}\hfil}}}%
+  \hspace*{\ibgapboxx}%
+  \ibeb@frame{\ibwboxheight}{\ibgapboxwidth}{%
+    \ibat{\dimexpr\ibdotbase-0.5\ibruleweight\relax}{%
+      \ibeb@dotline{\dimexpr\ibdotinset-\ibruleweight\relax}%
+        {\dimexpr\ibgapboxwidth-\ibdotinset-8mm\relax}}}%
+  \par\vskip\ibgapboxsep}
+
+% Gap marker for use inside the stimulus. Give it the question number it will
+% carry; \ibgapq below must then be emitted in the same order.
+\let\ibgapmark\ibgap
+
+% ═══════════════════════════════════════════════════════════════════════════
+%  9.  PAGE FURNITURE
+% ═══════════════════════════════════════════════════════════════════════════
+\newcommand\ibsessioncode{0000\,--\,0000}
+\newcommand\ibsetsession[1]{\renewcommand\ibsessioncode{#1}}
+% The internal page code runs in step with the page number (08EP01, 08EP02…),
+% so it can never drift out of sync.  \ibsetfootcode overrides it for one
+% document; \ibsetfootcode{} switches it off.
+\newcommand\ibfootprefix{08EP}
+\newcommand\ibsetfootprefix[1]{\renewcommand\ibfootprefix{#1}}
+\newcommand\ibfootcode{\ibfootprefix\ifnum\value{page}<10 0\fi\arabic{page}}
+\newcommand\ibsetfootcode[1]{\renewcommand\ibfootcode{#1}}
+\newif\ifibeb@turnover \ibeb@turnoverfalse
+\newcommand\ibturnover{\global\ibeb@turnovertrue}
+\newcommand\ibnoturnover{\global\ibeb@turnoverfalse}
+
+% The footer carries the "Turn over" line (only where the IB prints it) above
+% the paper's internal page code.  The code's position is fixed: it does not
+% move when the "Turn over" line is present, so the two are set independently.
+\newcommand\ibeb@turnovertext{Turn over / Tournez la page / Véase al dorso}
+% forward declarations: the page style below draws the Notes box
+\newif\ifibeb@noteson \ibeb@notesonfalse
+\providecommand\ibeb@notesframe{}
+% raise of the Notes box above the footer baseline (289.51 → box bottom 271.91)
+\newlength\ibnotesraise \setlength\ibnotesraise{17.78mm}
+\newcommand\ibeb@turnoverraise{7.51mm}
+
+\fancypagestyle{ibbody}{%
+  \fancyhf{}%
+  \renewcommand\headrulewidth{0pt}%
+  \renewcommand\footrulewidth{0pt}%
+  \fancyhead[C]{\normalsize--\nobreakspace\thepage\nobreakspace--}%
+  \fancyhead[R]{\fontsize{9}{11}\selectfont\ibsessioncode}%
+  \fancyfoot[C]{\ifx\ibfootcode\empty\else
+    \fontsize{8}{10}\selectfont\ibfootcode\fi}%
+  \fancyfoot[L]{%
+    \ifibeb@noteson
+      \rlap{\raisebox{\ibnotesraise}[\z@][\z@]{%
+        \ibeb@notesframe}}%
+    \fi}%
+  \fancyfoot[R]{%
+    \ifibeb@turnover
+      \raisebox{\ibeb@turnoverraise}[\z@][\z@]{%
+        \fontsize{10}{12}\selectfont\bfseries\ibeb@turnovertext}%
+      \global\ibeb@turnoverfalse
+    \fi}}
+
+\fancypagestyle{ibcover}{%
+  \fancyhf{}%
+  \renewcommand\headrulewidth{0pt}%
+  \renewcommand\footrulewidth{0pt}%
+  \fancyfoot[C]{\ifx\ibfootcode\empty\else
+    \fontsize{8}{10}\selectfont\ibfootcode\fi}}
+
+\pagestyle{ibbody}
+
+% Listening papers carry a Notes box at the foot of every page.  It is the
+% same box in the same place on every page of every paper: 179.82 x 49.82 mm,
+% top at y = 222.09, label baseline 4.82 mm below that.
+\newlength\ibnotesheight \setlength\ibnotesheight{49.82mm}
+\newlength\ibnotesbottom \setlength\ibnotesbottom{6.27mm}
+\newlength\ibnotesinset  \setlength\ibnotesinset{2.18mm}
+\newcommand\ibnoteslabely{4.82mm}
+
+\renewcommand\ibeb@notesframe{%
+  \ibeb@frame{\ibnotesheight}{\textwidth}{%
+    \ibat{\dimexpr\ibnoteslabely-0.5\ibruleweight\relax}{%
+      \hspace*{\dimexpr\ibnotesinset-\ibruleweight\relax}\textbf{Notes/Notas:}}}}
+
+% Place one Notes box by hand, at the foot of the current page.
+\newcommand\ibnotesbox[1][\ibnotesheight]{%
+  \par\vspace*{\fill}%
+  \noindent\ibeb@frame{#1}{\textwidth}{%
+    \ibat{\dimexpr\ibnoteslabely-0.5\ibruleweight\relax}{%
+      \hspace*{\dimexpr\ibnotesinset-\ibruleweight\relax}\textbf{Notes/Notas:}}}%
+  \par\vspace*{\ibnotesbottom}}
+
+% \ibnotesonall — the right way to do a listening paper.  The Notes box becomes
+% page furniture: it is drawn on every page at the fixed IB position, and the
+% body text block is shortened to stop above it, so question content can never
+% run into it or push it onto another page.
+\newlength\ibnotesclear \setlength\ibnotesclear{4mm} % body → Notes box
+\newcommand\ibnotesonall{%
+  \setlength\textheight{\dimexpr222.09mm-23.95mm-\ibnotesclear\relax}%
+  \setlength\footskip{\dimexpr289.51mm-222.09mm+\ibnotesclear\relax}%
+  \ibeb@notesontrue}
+
+% "Please do not write on this page." filler page.
+\newcommand\ibblankpage{%
+  \clearpage
+  \thispagestyle{ibbody}%
+  \vspace*{\fill}
+  \begin{center}
+    Please do not write on this page.\\[1mm]
+    Answers written on this page\\ will not be marked.\\[5mm]
+    \emph{Veuillez ne pas écrire sur cette page.}\\[1mm]
+    \emph{Les réponses rédigées sur cette page ne seront pas corrigées.}\\[5mm]
+    \emph{No escriba en esta página.}\\[1mm]
+    \emph{Las respuestas que se escriban en esta página no serán corregidas.}
+  \end{center}
+  \vspace*{\fill}
+  \clearpage}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% 10.  COVER PAGE
+% ═══════════════════════════════════════════════════════════════════════════
+\newcommand\ibcover[6]{% {titles}{date}{duration}{instructions}{pages}{session}
+  \thispagestyle{ibcover}%
+  \noindent\begin{minipage}[t]{\textwidth}
+    \vspace*{2mm}
+    \textbf{\large #1}\par\vspace{6mm}
+    {#2}\par\vspace{4mm}
+    \noindent
+    \begin{minipage}[t]{0.55\textwidth}
+      \textbf{Zone A} afternoon\quad\textbf{Zone B} afternoon\quad\textbf{Zone C} afternoon\par
+      \vspace{4mm}#3
+    \end{minipage}%
+    \hfill
+    \begin{minipage}[t]{0.42\textwidth}
+      \centering Session number\par\vspace{2mm}
+      \setlength\fboxsep{0pt}\fboxrule=\ibruleweight
+      \hbox{\ibsessionboxes{10}}
+    \end{minipage}
+    \par\vspace{10mm}
+    #4
+    \par\vspace{\fill}
+    \noindent #5\hfill #6
+  \end{minipage}%
+  \clearpage}
+
+\newcommand\ibsessionboxes[1]{%
+  \setcounter{ibboxcount}{0}%
+  \loop\ifnum\value{ibboxcount}<#1
+    \stepcounter{ibboxcount}%
+    \fboxrule=\ibruleweight \fboxsep=-\ibruleweight
+    \framebox[6mm][c]{\rule{0pt}{7mm}}%
+  \repeat}
+
+% Bulleted instruction list, as used on the covers.
+\newenvironment{ibinstructions}[1]%
+  {\par\noindent\textbf{#1}\par\vspace{1.5mm}%
+   \begin{list}{\textbullet}{%
+     \setlength\leftmargin{5mm}\setlength\labelwidth{3mm}%
+     \setlength\labelsep{2mm}\setlength\itemsep{0.6mm}%
+     \setlength\parsep{0pt}\setlength\topsep{0pt}}}%
+  {\end{list}\par\vspace{4mm}}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% 11.  TEXT BOOKLET
+%      The reading texts live in a separate booklet.  Body text is indented
+%      15 mm from the margin; the gutter carries either line numbers (every
+%      fifth line, right-aligned) or reverse-video paragraph badges.
+% ═══════════════════════════════════════════════════════════════════════════
+\newlength\ibtextindent   \setlength\ibtextindent{15mm}
+\newlength\ibtextleading  \setlength\ibtextleading{4.65mm}
+
+% "Text A" label, then the headline centred over the indented body block.
+% Measured off 2025 May text booklet: label baseline → title baseline 11.37 mm,
+% title baseline → first body baseline 9.26 mm.
+\newlength\ibtextlabelskip \setlength\ibtextlabelskip{6.74mm}
+\newlength\ibtexttitleskip \setlength\ibtexttitleskip{0.01mm}
+\newcommand\ibtextlabel[1]{%
+  \ibeb@textbreak
+  \par\noindent\textbf{Text #1}\par\vskip\ibtextlabelskip}
+\newcommand\ibtexttitle[1]{%
+  \par\noindent\hspace*{\ibtextindent}%
+  \vtop{\hsize=\dimexpr\textwidth-\ibtextindent\relax
+        \centering\fontsize{16}{19.2}\selectfont\bfseries #1\par}%
+  \par\vskip\ibtexttitleskip}
+
+% The body of one text.  Optional argument: "lines" (default) or "paragraphs".
+\newenvironment{ibtextbody}[1][lines]%
+  {\par
+   \setlength\leftskip{\ibtextindent}%
+   \baselineskip=\ibtextleading
+   \setlength\parskip{4.60mm}%
+   \def\ibeb@numstyle{#1}%
+   \def\ibeb@byline{lines}%
+   \ifx\ibeb@numstyle\ibeb@byline \ibeb@startlinenumbers \fi
+   \ignorespaces}%
+  {\par
+   \ifx\ibeb@numstyle\ibeb@byline \ibeb@stoplinenumbers \fi
+   \setlength\leftskip{0pt}\setlength\parskip{0pt}%
+   \par\vspace{\ibblockskip}}
+
+% A numbered paragraph: badge in the gutter, text in the block.
+\newlength\ibparnumgap \setlength\ibparnumgap{5.03mm} % badge → body text
+\newcommand\ibparnum[1]{%
+  \par\noindent\llap{\raisebox{\z@}[\z@][\z@]{\ibbadge{#1}}%
+    \hspace{\ibparnumgap}}\ignorespaces}
+% Older papers set the paragraph number as a plain bold figure.
+\newcommand\ibparnumplain[1]{%
+  \par\noindent\llap{\textbf{#1}\hspace{\dimexpr\ibtextindent-3.2mm\relax}}\ignorespaces}
+
+% Glossary note under a text, as the IB sets it.
+\newlength\ibglossrule \setlength\ibglossrule{47.75mm}
+\newlength\ibglossskip \setlength\ibglossskip{5.03mm} % rule → note baseline
+\newcommand\ibglossnote[2]{%
+  \par\vspace{3mm}%
+  \noindent\rule{\ibglossrule}{\ibruleweight}%
+  \par\nointerlineskip
+  \vskip\dimexpr\ibglossskip-2.90mm\relax
+  \noindent\hbox to 5mm{*\hfil}#1: #2\par}
+
+% Line numbering is optional so the package still loads without lineno.
+\IfFileExists{lineno.sty}{%
+  \RequirePackage[left,modulo]{lineno}%
+  \renewcommand\thelinenumber{\arabic{linenumber}}%
+  \renewcommand\linenumberfont{\normalfont\normalsize}%
+  % lineno anchors the number at the margin, but the IB sets it in the gutter
+  % 4.5 mm to the left of the indented text block, so the separation is
+  % negative with respect to the margin.
+  % each text is numbered from 1, as the IB does
+  \newcommand\ibeb@startlinenumbers{%
+    \setlength\linenumbersep{-\dimexpr\ibtextindent-5.0mm\relax}%
+    \modulolinenumbers[5]\resetlinenumber\linenumbers}%
+  \newcommand\ibeb@stoplinenumbers{\nolinenumbers}%
+}{%
+  \PackageWarning{ibenglishb}{lineno.sty not found; text-booklet line
+    numbering disabled}%
+  \newcommand\ibeb@startlinenumbers{}%
+  \newcommand\ibeb@stoplinenumbers{}%
+}
+
+% Source acknowledgement block at the foot of a text booklet.  Measured off
+% 2025 May: 9 pt on a 3.81 mm leading, 6.11 mm between paragraphs, the whole
+% block flushed to the bottom of the page, reference entries hanging at 20 mm.
+\newlength\ibbackleading \setlength\ibbackleading{3.81mm}
+\newlength\ibbackparsep  \setlength\ibbackparsep{2.30mm} % → 6.11 mm total
+\newlength\ibrefhang     \setlength\ibrefhang{20mm}
+\newlength\ibbackheadsep \setlength\ibbackheadsep{6.11mm}
+
+\newcommand\ibeb@backfont{%
+  \fontsize{9}{\ibbackleading}\selectfont
+  \setlength\parskip{\ibbackparsep}\setlength\parindent{0pt}%
+  \sloppy\emergencystretch=2em
+  \urlstyle{same}%
+  \def\UrlBreaks{\do\/\do\-\do\.\do\_\do\?\do\=\do\&}}
+
+\newcommand\ibdisclaimer{%
+  \par\vspace*{\fill}%
+  \begingroup\ibeb@backfont
+    \noindent\textbf{Disclaimer/Avertissement/Advertencia:}\par
+    \noindent Content used in IB assessments is taken from authentic,
+      third-party sources. The views expressed within them belong to their
+      individual authors and/or publishers and do not necessarily reflect the
+      views of the IB.\par
+    \noindent\emph{Le contenu utilisé dans les évaluations de l'IB est extrait
+      de sources authentiques issues de tierces parties. Les avis qui y sont
+      exprimés appartiennent à leurs auteurs et/ou éditeurs, et ne reflètent
+      pas nécessairement ceux de l'IB.}\par
+    \noindent\emph{Los contenidos usados en las evaluaciones del IB provienen
+      de fuentes externas auténticas. Las opiniones expresadas en ellos
+      pertenecen a sus autores y/o editores, y no reflejan necesariamente las
+      del IB.}\par
+  \endgroup}
+
+% \ibreferences{ \ibrefentry{Text B}{…} \ibrefentry{}{…} }
+\newcommand\ibreferences[1]{%
+  \begingroup\ibeb@backfont
+    \vskip\dimexpr\ibbackheadsep-\ibbackleading\relax
+    \noindent\textbf{References/Références/Referencias:}\par
+    #1
+  \endgroup\par}
+
+\newcommand\ibrefentry[2]{%
+  \par\noindent
+  \hangindent\ibrefhang \hangafter=1
+  \hbox to \ibrefhang{\textbf{#1}\hfil}#2\par}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% 12.  PAPER 1 — PRODUCTIVE SKILLS (WRITING)
+%      One page, three tasks, each a scenario followed by three text-type
+%      options centred in three equal columns across the task's text block.
+%      Measured across 16 booklets, Nov 2020 – May 2025.  The IB widened the
+%      spacing from the November 2024 session; \ibpaperonelegacy restores the
+%      earlier values.
+% ═══════════════════════════════════════════════════════════════════════════
+\newcommand\ibstr@paperone{Complete one task. Use an appropriate text type
+  from the options below the task you choose. Write 450 to 600 words.}
+\newcommand\ibrubricpaperone{\ibeb@rubric{\ibstr@paperone}}
+
+\newlength\ibtaskoptsep  \setlength\ibtaskoptsep{11.42mm} % task text → options
+\newlength\ibtasksep     \setlength\ibtasksep{15.21mm}    % options → next task
+\newcommand\ibpaperonelegacy{%
+  \setlength\ibtaskoptsep{10.42mm}\setlength\ibtasksep{14.04mm}}
+
+\newlength\ibeb@taskcol
+\newif\ifibeb@firsttask \ibeb@firsttasktrue
+
+% \ibtask{scenario}{text type}{text type}{text type}
+\newcommand\ibtask[4]{%
+  \ifibeb@firsttask
+    \global\ibeb@firsttaskfalse
+  \else
+    \ibeb@baselineat{\ibtasksep}%
+  \fi
+  \ibeb@newq{#2 / #3 / #4}{0}{task}%
+  \ibeb@stem{\arabic{ibq}}{#1}%
+  \ibeb@baselineat{\ibtaskoptsep}%
+  \noindent\hspace*{\ibhang}\strut
+  \setlength\ibeb@taskcol{\dimexpr(\textwidth-\ibhang)/3\relax}%
+  \hbox to \dimexpr\textwidth-\ibhang\relax{%
+    \hbox to \ibeb@taskcol{\hfil#2\hfil}%
+    \hbox to \ibeb@taskcol{\hfil#3\hfil}%
+    \hbox to \ibeb@taskcol{\hfil#4\hfil}}%
+  \par}
+
+\endinput

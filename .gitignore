@@ -1,0 +1,23 @@
+# build products — regenerate with `make`
+*.pdf
+*.ans
+*.aux
+*.log
+*.xdv
+ui/build/
+.chk
+
+# copied in by `make verify`
+test/ibenglishb.sty
+
+# python
+test/.venv/
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# local vault — IB reference material, corpus analysis, measurement probes.
+# Never commit. See local/README.md.
+local/

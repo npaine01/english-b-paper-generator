@@ -1,0 +1,966 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>English B paper generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#F7F7F4; --card:#FFF; --sunk:#EFEFEA;
+  --ink:#15171A; --ink-2:#585D65; --ink-3:#8A8F97;
+  --rule:#DEDDD5; --rule-2:#ECEBE5;
+  --accent:#A3273F; --accent-soft:#F5E5E8;
+  --ok:#2F6B57; --ok-soft:#E4F0EA;
+  --warn:#9A6316; --warn-soft:#FAEEDC;
+  --focus:#A3273F;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#131417; --card:#1B1D21; --sunk:#232529;
+  --ink:#ECECE9; --ink-2:#AFB3B9; --ink-3:#7E838B;
+  --rule:#34373D; --rule-2:#282A2F;
+  --accent:#E8899C; --accent-soft:#372127;
+  --ok:#7FC6AA; --ok-soft:#1C2B26;
+  --warn:#DFAE72; --warn-soft:#2E2519;
+  --focus:#E8899C;
+}}
+:root[data-theme="dark"]{
+  --paper:#131417; --card:#1B1D21; --sunk:#232529;
+  --ink:#ECECE9; --ink-2:#AFB3B9; --ink-3:#7E838B;
+  --rule:#34373D; --rule-2:#282A2F;
+  --accent:#E8899C; --accent-soft:#372127;
+  --ok:#7FC6AA; --ok-soft:#1C2B26;
+  --warn:#DFAE72; --warn-soft:#2E2519;
+  --focus:#E8899C;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:Archivo,system-ui,-apple-system,sans-serif;font-size:14px;
+  display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+
+/* ── top bar ─────────────────────────────────────────── */
+.bar{
+  display:flex;align-items:center;gap:14px;padding:9px 16px;
+  background:var(--card);border-bottom:1px solid var(--rule);flex:none;flex-wrap:wrap
+}
+.brand{font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+.brand span{color:var(--accent)}
+.bar .sep{width:1px;height:22px;background:var(--rule-2)}
+.field{display:flex;align-items:center;gap:6px}
+.field label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+input[type=text],input[type=number],select,textarea{
+  background:var(--card);border:1px solid var(--rule);border-radius:4px;
+  padding:5px 8px;color:var(--ink)
+}
+input[type=text]:hover,textarea:hover,select:hover{border-color:var(--ink-3)}
+.bar input[type=text]{width:118px}
+.bar input[type=number]{width:62px}
+.spacer{flex:1}
+.tot{
+  font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;
+  padding:5px 10px;border-radius:4px;background:var(--sunk);white-space:nowrap;font-size:13px
+}
+.tot.ok{background:var(--ok-soft);color:var(--ok)}
+.tot.warn{background:var(--warn-soft);color:var(--warn)}
+.btn{
+  border:1px solid var(--rule);background:var(--card);border-radius:5px;
+  padding:6px 12px;cursor:pointer;font-weight:500;white-space:nowrap
+}
+.btn:hover{border-color:var(--ink-3)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.5;cursor:default}
+
+/* ── panes ───────────────────────────────────────────── */
+.panes{flex:1;display:grid;grid-template-columns:minmax(430px,1fr) minmax(380px,1fr);min-height:0}
+.left{overflow-y:auto;padding:16px 16px 120px;border-right:1px solid var(--rule)}
+.right{display:flex;flex-direction:column;min-height:0;background:var(--sunk)}
+.prevbar{
+  display:flex;align-items:center;gap:10px;padding:8px 14px;
+  background:var(--card);border-bottom:1px solid var(--rule);flex:none
+}
+.prevbar .status{font-size:12px;color:var(--ink-3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prevbar .status.bad{color:var(--accent)}
+#preview{flex:1;border:0;width:100%;background:var(--sunk)}
+#log{
+  display:none;flex:1;margin:0;padding:14px 16px;overflow:auto;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.55;
+  white-space:pre-wrap;color:var(--accent);background:var(--card)
+}
+.empty{padding:40px 20px;text-align:center;color:var(--ink-3);font-size:13px}
+
+/* ── question cards ──────────────────────────────────── */
+.card{
+  background:var(--card);border:1px solid var(--rule);border-radius:6px;
+  margin-bottom:10px;overflow:hidden
+}
+.card.section{border-color:var(--accent);background:var(--accent-soft)}
+.card.brk{background:transparent;border-style:dashed;text-align:center}
+.chead{
+  display:flex;align-items:center;gap:9px;padding:7px 10px;
+  border-bottom:1px solid var(--rule-2);background:var(--card)
+}
+.card.section .chead,.card.brk .chead{background:transparent;border-bottom:0}
+.qn{
+  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;
+  color:var(--accent);min-width:44px;font-variant-numeric:tabular-nums
+}
+.tname{font-weight:600;font-size:12.5px;flex:1}
+.marks{
+  font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-3);
+  background:var(--sunk);border-radius:3px;padding:2px 6px
+}
+.icon{
+  border:0;background:transparent;color:var(--ink-3);cursor:pointer;
+  padding:3px 5px;border-radius:4px;line-height:1;font-size:13px
+}
+.icon:hover{background:var(--sunk);color:var(--ink)}
+.icon.del:hover{background:var(--accent-soft);color:var(--accent)}
+.cbody{padding:10px;display:flex;flex-direction:column;gap:8px}
+.cbody textarea,.cbody input[type=text]{
+  width:100%;font-family:Arial,Helvetica,sans-serif;font-size:13.5px;line-height:1.45
+}
+.cbody textarea{resize:vertical;min-height:52px}
+.row{display:flex;gap:8px;align-items:center}
+.row>label{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+.opt{display:flex;gap:7px;align-items:center}
+.opt .lt{
+  font-family:'IBM Plex Mono',monospace;font-weight:500;min-width:17px;color:var(--ink-2);font-size:12.5px
+}
+.opt input{flex:1}
+.opt .pick{
+  border:1px solid var(--rule);background:var(--card);border-radius:4px;
+  width:26px;height:26px;cursor:pointer;color:var(--ink-3);flex:none;font-size:12px
+}
+.opt .pick.on{background:var(--ok-soft);border-color:var(--ok);color:var(--ok);font-weight:700}
+.hint{font-size:11.5px;color:var(--ink-3);line-height:1.45}
+.flag{
+  font-size:11.5px;color:var(--warn);background:var(--warn-soft);
+  padding:5px 8px;border-radius:4px
+}
+.mini{font-size:12px;padding:3px 8px}
+
+/* ── add palette ─────────────────────────────────────── */
+.addwrap{margin-top:6px}
+.palette{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:6px;
+  padding:10px;background:var(--card);border:1px solid var(--rule);border-radius:6px
+}
+.palette h4{
+  grid-column:1/-1;margin:4px 0 0;font-size:10.5px;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--ink-3);font-weight:600
+}
+.pbtn{
+  text-align:left;border:1px solid var(--rule);background:var(--card);
+  border-radius:5px;padding:7px 9px;cursor:pointer;font-size:12.5px
+}
+.pbtn:hover{border-color:var(--accent);color:var(--accent)}
+.pbtn small{display:block;color:var(--ink-3);font-size:10.5px;margin-top:1px}
+.pbtn:hover small{color:var(--ink-3)}
+@media (max-width:900px){
+  .panes{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
+  .left{border-right:0;border-bottom:1px solid var(--rule)}
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="brand">English B <span>paper generator</span></div>
+  <div class="sep"></div>
+  <div class="field">
+    <label for="kind">Paper</label>
+    <select id="kind">
+      <option value="reading">P2 Reading</option>
+      <option value="listening">P2 Listening</option>
+    </select>
+  </div>
+  <div class="field"><label for="session">Session</label><input type="text" id="session" value="QDHS 2026"></div>
+  <div class="field"><label for="date">Date</label><input type="text" id="date" value="8 May 2026"></div>
+  <div class="field"><label for="target">Target</label><input type="number" id="target" value="40" min="0" max="99"></div>
+  <div class="spacer"></div>
+  <div class="tot" id="tot">0 questions · 0 marks</div>
+  <button class="btn" id="save">Save</button>
+  <button class="btn" id="load">Open</button>
+  <button class="btn" id="dltex">.tex</button>
+  <button class="btn primary" id="compile">Compile</button>
+</div>
+
+<div class="panes">
+  <div class="left">
+    <div id="list"></div>
+    <div class="addwrap"><div class="palette" id="palette"></div></div>
+  </div>
+  <div class="right">
+    <div class="prevbar">
+      <strong style="font-size:12.5px">Preview</strong>
+      <div class="status" id="status">Not compiled yet</div>
+      <button class="btn mini" id="dlpdf" disabled>Download PDF</button>
+    </div>
+    <iframe id="preview" title="Compiled paper"></iframe>
+    <pre id="log"></pre>
+  </div>
+</div>
+
+<input type="file" id="file" accept=".json" hidden>
+
+<script>
+"use strict";
+
+/* ═══ model ═══════════════════════════════════════════════════════════════ */
+
+const TYPES = {
+  text:      {name:"Text section",              group:"structure"},
+  brk:       {name:"Page break",                group:"structure"},
+  mcq:       {name:"Multiple choice",           group:"both",   rubric:"mcq"},
+  true:      {name:"Identify true statements",  group:"both",   rubric:null},
+  short:     {name:"Short answer",              group:"both",   rubric:"short"},
+  shorttwo:  {name:"Short answer, two answers", group:"listening", rubric:"short"},
+  tf:        {name:"True/false + justification",group:"reading",rubric:"tf"},
+  findword:  {name:"Find the word",             group:"reading",rubric:"findword"},
+  complete:  {name:"Complete the sentence",     group:"reading",rubric:"complete"},
+  refer:     {name:"Identify referents",        group:"reading",rubric:"refer"},
+  headings:  {name:"Match headings",            group:"reading",rubric:"headings", match:"gap"},
+  matchq:    {name:"Match questions to gaps",   group:"reading",rubric:"matchq",   match:"gap"},
+  gapsummary:{name:"Gap-fill from a word list", group:"reading",rubric:"gapsummary",match:"gap"},
+  vocab:     {name:"Match vocabulary",          group:"reading",rubric:"vocab",    match:"item"},
+  people:    {name:"Match statements to people",group:"reading",rubric:"people",   match:"item"},
+  halves:    {name:"Match sentence halves",     group:"reading",rubric:"halves",   match:"item"},
+  source:    {name:"Match to sources",          group:"listening",rubric:"source"},
+  gapfill:   {name:"Gap-fill, students write",  group:"listening",rubric:"gapfill"},
+};
+
+const LETTERS = "ABCDEFGHIJ".split("");
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+let paper = load() || fresh();
+
+function fresh(){
+  return {kind:"reading", session:"QDHS 2026", date:"8 May 2026", target:40, items:[
+    {id:uid(), t:"text", label:"A", title:"Headline of your first text"},
+    {id:uid(), t:"short", stem:"", answer:""},
+  ]};
+}
+
+function blank(t){
+  const b = {id:uid(), t};
+  const T = TYPES[t];
+  if (t === "text")        Object.assign(b, {label:"A", title:""});
+  else if (t === "mcq")    Object.assign(b, {stem:"", opts:["","","",""], answer:0});
+  else if (t === "true")   Object.assign(b, {marks:4, opts:["","","","","","","",""], picked:[]});
+  else if (t === "shorttwo") Object.assign(b, {stem:"", a:"", b:""});
+  else if (t === "source") Object.assign(b, {header:"Whose opinion?", cols:["","","Both"], rows:[{text:"",answer:0}]});
+  else if (t === "gapfill")Object.assign(b, {stimulus:"", caption:"", gaps:[{answer:""},{answer:""}]});
+  else if (T.match)        Object.assign(b, {ref:"", items:[{text:"",line:"",answer:0},{text:"",line:"",answer:1}],
+                                             opts:["","","",""], summary:""});
+  else if (t === "refer")  Object.assign(b, {stem:"", answer:"", ref:"", line:""});
+  else if (t === "tf")     Object.assign(b, {stem:"", answer:"", ref:"", verdict:"T", quote:""});
+  else                     Object.assign(b, {stem:"", answer:"", ref:""});
+  return b;
+}
+
+/* ═══ numbering & marks — mirrors the package's rules ════════════════════ */
+
+function numbering(){
+  let q = 0, marks = 0;
+  return paper.items.map(it => {
+    const T = TYPES[it.t];
+    let from = null, to = null, m = 0;
+    if (it.t === "text" || it.t === "brk") return {from:null, to:null, m:0};
+    if (it.t === "true")            { from = ++q; to = from; m = +it.marks || 0; }
+    else if (it.t === "shorttwo")   { from = ++q; to = from; m = 2; }
+    else if (T.match)               { from = q + 1; q += it.items.length; to = q; m = it.items.length; }
+    else if (it.t === "source")     { from = q + 1; q += it.rows.length;  to = q; m = it.rows.length; }
+    else if (it.t === "gapfill")    { from = q + 1; q += it.gaps.length;  to = q; m = it.gaps.length; }
+    else                            { from = ++q; to = from; m = 1; }
+    marks += m;
+    return {from, to, m};
+  });
+}
+
+function problems(it){
+  const T = TYPES[it.t], out = [];
+  if (it.t === "mcq"){
+    const want = paper.kind === "listening" ? 3 : 4;
+    if (it.opts.length !== want)
+      out.push(`${paper.kind === "listening" ? "Listening" : "Reading"} multiple choice takes ${want} options, not ${it.opts.length}.`);
+    if (!it.opts.some(o => o.trim())) out.push("No options written yet.");
+  }
+  if (it.t === "true" && it.opts.length !== 2 * (+it.marks || 0))
+    out.push(`${it.marks} marks needs ${2 * it.marks} options — there are ${it.opts.length}.`);
+  if (it.t === "true" && it.picked.length !== +it.marks)
+    out.push(`Tick exactly ${it.marks} correct statements — ${it.picked.length} ticked.`);
+  if (T.match && it.opts.length !== 2 * it.items.length)
+    out.push(`${it.items.length} items needs ${2 * it.items.length} options — there are ${it.opts.length}.`);
+  if (it.t === "vocab"){
+    const missing = it.items.filter(m => !String(m.line == null ? "" : m.line).trim()).length;
+    if (missing) out.push(`${missing} ${missing === 1 ? "word has" : "words have"} no line number — the IB always prints one.`);
+  }
+  if (it.t === "refer" && !lineRef(it.line))
+    out.push("No line reference — every referent question in the corpus prints one.");
+  if (it.t === "tf" && !(it.quote || "").trim())
+    out.push("No justification quotation — the markscheme needs the words from the text.");
+  if ((it.t === "findword" || it.t === "complete") && !it.ref.trim())
+    out.push("No line or paragraph reference — the rubric needs one.");
+  return out;
+}
+
+/* ═══ LaTeX ══════════════════════════════════════════════════════════════ */
+
+function tex(s){
+  return (s || "")
+    .replace(/\\/g, "\\textbackslash{}")
+    .replace(/([&%$#_{}])/g, "\\$1")
+    .replace(/~/g, "\\textasciitilde{}")
+    .replace(/\^/g, "\\textasciicircum{}")
+    .replace(/—/g, "---").replace(/–/g, "--")
+    .replace(/…/g, "\\dots{}")
+    .replace(/“/g, "``").replace(/”/g, "''")
+    .replace(/‘/g, "`").replace(/’/g, "'")
+    .replace(/"([^"]*)"/g, "``$1''")
+    .replace(/\*([^*]+)\*/g, "\\ibu{$1}")
+    .trim();
+}
+
+const RUBRIC = {
+  mcq:"\\ibrubricmcq", short:"\\ibrubricshort", tf:"\\ibrubrictf",
+  refer:"\\ibrubricrefer", headings:"\\ibrubricheadings", matchq:"\\ibrubricmatchq",
+  vocab:"\\ibrubricvocab", people:"\\ibrubricpeople", halves:"\\ibrubrichalves",
+  gapsummary:"\\ibrubricgapsummary", source:"\\ibrubricsource", gapfill:"\\ibrubricgapfill",
+};
+
+// The IB ends a stem with an ellipsis wherever the options or the answer
+// complete the sentence. Measured across the corpus: sentence halves 22/22,
+// complete-the-sentence 57/60, and multiple choice 63% — the other 37% being
+// direct questions, which end in a question mark instead. Referent and
+// short-answer stems are left alone; neither is consistent enough to enforce.
+function ellipsize(v, questionOk){
+  let t = String(v == null ? "" : v).trim().replace(/\.\.\.+/g, "…").replace(/\s+…/g, "…");
+  if (!t) return t;
+  if (questionOk && /[?]$/.test(t)) return t;
+  if (/…$/.test(t)) return t;
+  return t.replace(/[.,;:]+$/, "") + "…";
+}
+const ellipsisAdded = (v, q) => Boolean(String(v || "").trim()) &&
+                                ellipsize(v, q) !== String(v).trim();
+
+// a line reference as it is printed inside an item: (line 8) or (lines 8-9)
+function lineRef(v){
+  const t = String(v == null ? "" : v).trim();
+  if (!t) return "";
+  const pair = t.match(/^(\d+)\s*[-–—to\s]+\s*(\d+)$/i);
+  if (pair) return `\\iblinepair{${pair[1]}}{${pair[2]}}`;
+  const one = t.match(/^(\d+)$/);
+  return one ? `\\ibline{${one[1]}}` : "";
+}
+
+function refTex(r){
+  const s = (r || "").trim();
+  let m = s.match(/^\s*lines?\s*(\d+)\s*[-–—to]+\s*(\d+)\s*$/i);
+  if (m) return `\\iblines{${m[1]}}{${m[2]}}`;
+  m = s.match(/^\s*paragraphs?\s*(\d+)\s*[-–—to]+\s*(\d+)\s*$/i);
+  if (m) return `\\ibparas{${m[1]}}{${m[2]}}`;
+  m = s.match(/^\s*paragraph\s*(\d+)\s*$/i);
+  if (m) return `\\ibpara{${m[1]}}`;
+  return tex(s);
+}
+
+function buildTex(){
+  const L = [], n = numbering();
+  const title = paper.kind === "listening"
+    ? "English B -- Higher level -- Paper 2 -- Listening comprehension"
+    : "English B -- Higher level -- Paper 2 -- Reading comprehension";
+
+  L.push("% generated by the English B paper generator");
+  L.push("\\documentclass[11pt,a4paper]{article}");
+  L.push("\\usepackage{ibenglishb}");
+  L.push("");
+  L.push(`\\ibsetsession{${tex(paper.session)}}`);
+  L.push(`\\ibsetmaxmarks{${+paper.target || 0}}`);
+  if (paper.kind === "listening") L.push("\\ibnotesonall");
+  L.push("");
+  L.push("\\begin{document}");
+  L.push("");
+  L.push("\\ibcover");
+  L.push(`  {${title}}`);
+  L.push(`  {${tex(paper.date)}}`);
+  L.push("  {1 h}");
+  L.push("  {\\begin{ibinstructions}{Instructions to students}");
+  L.push("     \\item Write your session number in the boxes above.");
+  L.push("     \\item Do not open this examination paper until instructed to do so.");
+  L.push("     \\item Answer all questions. Each question is allocated \\textbf{[1 mark]} unless otherwise stated.");
+  L.push("     \\item Answers must be written within the answer boxes provided.");
+  if (paper.kind === "listening")
+    L.push("     \\item There will be three audio texts. Each will be played twice.");
+  else
+    L.push("     \\item All answers must be based on the appropriate texts in the accompanying text booklet.");
+  L.push(`     \\item The maximum mark for this examination paper is \\textbf{[${+paper.target || 0} marks]}.`);
+  L.push("   \\end{ibinstructions}}");
+  L.push("  {}{\\ibsessioncode}");
+  L.push("");
+
+  let lastRubric = null;
+  paper.items.forEach((it, i) => {
+    const T = TYPES[it.t];
+    if (it.t === "text"){
+      lastRubric = null;
+      L.push(paper.kind === "listening"
+        ? `\\ibaudiotext{${tex(it.label)}}{${tex(it.title)}}`
+        : `\\ibtextheading{${tex(it.label)}}{${tex(it.title)}}`);
+      L.push("");
+      return;
+    }
+    if (it.t === "brk"){ L.push("\\ibpagebreak"); L.push(""); return; }
+
+    // a rubric is emitted whenever the run of like questions changes
+    const key = T.rubric === "findword" ? "findword|" + it.ref
+              : T.rubric === "complete" ? "complete|" + it.ref
+              : T.rubric;
+    if (T.rubric && key !== lastRubric){
+      if (T.rubric === "findword")      L.push(`\\ibrubricfindword{${refTex(it.ref)}}`);
+      else if (T.rubric === "complete") L.push(`\\ibrubriccomplete{${refTex(it.ref)}}`);
+      else                              L.push(RUBRIC[T.rubric]);
+      lastRubric = key;
+    }
+
+    if (it.t === "mcq"){
+      L.push(`\\begin{ibmcq}[${LETTERS[it.answer] || ""}]{${tex(ellipsize(it.stem, true))}}`);
+      it.opts.forEach(o => L.push(`  \\opt{${tex(o)}}`));
+      L.push("\\end{ibmcq}");
+    } else if (it.t === "true"){
+      const ans = it.picked.slice().sort((a,b)=>a-b).map(k => LETTERS[k]).join(", ");
+      L.push(`\\begin{ibtrue}[${ans}]{${+it.marks || 0}}`);
+      it.opts.forEach(o => L.push(`  \\opt{${tex(o)}}`));
+      L.push("\\end{ibtrue}");
+    } else if (T.match){
+      if (it.t === "gapsummary" && it.summary.trim()){
+        const base = n[i].from;
+        let k = -1;
+        const body = tex(it.summary).replace(/\[\s*\]/g, () => { k++; return `\\ibgap{${base + k}}`; });
+        L.push(`\\ibsummary{${body}}`);
+      }
+      L.push("\\begin{ibmatch}");
+      it.items.forEach(m => {
+        if (T.match === "gap"){ L.push(`  \\mgap[${LETTERS[m.answer] || ""}]`); return; }
+        const ln = it.t === "vocab" ? lineRef(m.line) : "";
+        const raw = it.t === "halves" ? ellipsize(m.text, false) : m.text;
+        const label = ln ? `${tex(raw)} ${ln}` : tex(raw);
+        L.push(`  \\mitem[${LETTERS[m.answer] || ""}]{${label}}`);
+      });
+      it.opts.forEach(o => L.push(`  \\mopt{${tex(o)}}`));
+      L.push("\\end{ibmatch}");
+    } else if (it.t === "source"){
+      L.push(`\\begin{ibsource}{${tex(it.header)}}{${tex(it.cols[0])}}{${tex(it.cols[1])}}{${tex(it.cols[2])}}`);
+      it.rows.forEach(r => L.push(`  \\srow[${tex(it.cols[r.answer] || "")}]{${tex(r.text)}}`));
+      L.push("\\end{ibsource}");
+    } else if (it.t === "gapfill"){
+      const base = n[i].from;
+      if (it.caption.trim()) L.push(`\\ibstimcaption{${tex(it.caption)}}`);
+      L.push("\\begin{ibstimulus}");
+      L.push("\\begin{ibstimlist}");
+      it.stimulus.split(/\n+/).filter(x => x.trim()).forEach(line => {
+        let k = -1;
+        L.push("  \\item " + tex(line).replace(/\[\s*\]/g, () => { k++; return "\\ibgapnext"; }));
+      });
+      L.push("\\end{ibstimlist}");
+      L.push("\\end{ibstimulus}");
+      it.gaps.forEach(g => L.push(`\\ibgapq[${tex(g.answer)}]`));
+    } else if (it.t === "shorttwo"){
+      L.push(`\\ibshortqtwo[${tex(it.a)}][${tex(it.b)}]{${tex(it.stem)}}`);
+    } else if (it.t === "refer"){
+      const ln = lineRef(it.line);
+      L.push(`\\ibreferq[${tex(it.answer)}]{${tex(it.stem)}${ln ? " " + ln : ""}}`);
+    } else if (it.t === "tf"){
+      const q = (it.quote || "").trim();
+      const ans = q ? `${it.verdict === "F" ? "F" : "T"}: ${tex('"' + q + '"')}` : tex(it.answer);
+      L.push(`\\ibtfq[${ans}]{${tex(it.stem)}}`);
+    } else {
+      const cmd = {short:"ibshortq", findword:"ibfindwordq",
+                   complete:"ibcompleteq"}[it.t];
+      const stem = it.t === "complete" ? ellipsize(it.stem, false) : it.stem;
+      L.push(`\\${cmd}[${tex(it.answer)}]{${tex(stem)}}`);
+    }
+    L.push("");
+  });
+
+  L.push("\\end{document}");
+  return L.join("\n");
+}
+
+/* ═══ rendering ══════════════════════════════════════════════════════════ */
+
+const $ = s => document.querySelector(s);
+const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c;
+                            if (txt != null) e.textContent = txt; return e; };
+
+function render(){
+  const list = $("#list"); list.innerHTML = "";
+  const n = numbering();
+  let totQ = 0, totM = 0;
+
+  paper.items.forEach((it, i) => {
+    const T = TYPES[it.t], num = n[i];
+    if (num.from){ totQ = num.to; totM += num.m; }
+    const card = el("div", "card" + (it.t === "text" ? " section" : it.t === "brk" ? " brk" : ""));
+
+    const head = el("div", "chead");
+    head.append(el("div", "qn", num.from ? (num.from === num.to ? num.from + "." : `${num.from}–${num.to}`) : ""));
+    head.append(el("div", "tname", it.t === "text"
+      ? (paper.kind === "listening" ? "Audio text" : "Text section")
+      : T.name));
+    if (num.m) head.append(el("div", "marks", num.m + (num.m === 1 ? " mark" : " marks")));
+    const mk = (label, title, fn, cls) => {
+      const b = el("button", "icon" + (cls ? " " + cls : ""), label);
+      b.title = title; b.onclick = fn; return b;
+    };
+    head.append(mk("↑", "Move up", () => move(i, -1)));
+    head.append(mk("↓", "Move down", () => move(i, 1)));
+    head.append(mk("⧉", "Duplicate", () => dup(i)));
+    head.append(mk("✕", "Delete", () => del(i), "del"));
+    card.append(head);
+
+    if (it.t !== "brk"){
+      const body = el("div", "cbody");
+      buildFields(body, it, num);
+      problems(it).forEach(p => body.append(el("div", "flag", p)));
+      card.append(body);
+    }
+    list.append(card);
+  });
+
+  if (!paper.items.length)
+    list.append(el("div", "empty", "Empty paper. Add a text section, then questions."));
+
+  const t = $("#tot"), target = +paper.target || 0;
+  t.textContent = `${totQ} question${totQ === 1 ? "" : "s"} · ${totM} of ${target} marks`;
+  t.className = "tot " + (totM === target && target ? "ok" : totM > target && target ? "warn" : "");
+  save();
+}
+
+function field(parent, label, value, oninput, multiline){
+  const row = el("div");
+  if (label) row.append(Object.assign(el("label"), {textContent:label,
+    style:"font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:3px"}));
+  const inp = el(multiline ? "textarea" : "input");
+  if (!multiline) inp.type = "text";
+  inp.value = value || "";
+  inp.oninput = e => oninput(e.target.value);
+  row.append(inp); parent.append(row);
+  return inp;
+}
+
+function optionList(parent, opts, answerIdx, onPick, onEdit, multi, picked){
+  opts.forEach((o, k) => {
+    const r = el("div", "opt");
+    r.append(el("span", "lt", LETTERS[k] + "."));
+    const inp = el("input"); inp.type = "text"; inp.value = o;
+    inp.placeholder = "Option " + LETTERS[k];
+    inp.oninput = e => { opts[k] = e.target.value; save(); onEdit && onEdit(); };
+    r.append(inp);
+    if (onPick){
+      const on = multi ? picked.includes(k) : answerIdx === k;
+      const p = el("button", "pick" + (on ? " on" : ""), on ? "✓" : "");
+      p.title = "Mark as correct";
+      p.onclick = () => { onPick(k); render(); };
+      r.append(p);
+    }
+    const x = el("button", "icon del", "✕");
+    x.title = "Remove option";
+    x.onclick = () => { opts.splice(k, 1); render(); };
+    r.append(x);
+    parent.append(r);
+  });
+  const add = el("button", "btn mini", "Add option");
+  add.onclick = () => { opts.push(""); render(); };
+  parent.append(add);
+}
+
+function buildFields(body, it, num){
+  const T = TYPES[it.t];
+
+  if (it.t === "text"){
+    const r = el("div", "row");
+    r.append(el("label", null, "Label"));
+    const s = el("select");
+    ["A","B","C"].forEach(v => { const o = el("option", null, v); o.value = v;
+                                 if (it.label === v) o.selected = true; s.append(o); });
+    s.onchange = e => { it.label = e.target.value; render(); };
+    s.style.width = "62px";
+    r.append(s); body.append(r);
+    field(body, paper.kind === "listening" ? "What students will hear" : "Headline",
+          it.title, v => { it.title = v; save(); }, paper.kind === "listening");
+    return;
+  }
+
+  if (it.t === "mcq"){
+    field(body, "Question", it.stem, v => { it.stem = v; render(); }, true);
+    if (ellipsisAdded(it.stem, true))
+      body.append(el("div", "hint", "Ends the options' sentence, so an ellipsis is added: "
+                                    + ellipsize(it.stem, true).slice(-34)));
+    optionList(body, it.opts, it.answer, k => it.answer = k, null, false);
+    return;
+  }
+
+  if (it.t === "true"){
+    const r = el("div", "row");
+    r.append(el("label", null, "Marks"));
+    const m = el("input"); m.type = "number"; m.min = 1; m.max = 8; m.value = it.marks;
+    m.style.width = "62px";
+    m.oninput = e => {
+      it.marks = +e.target.value || 1;
+      const want = 2 * it.marks;
+      while (it.opts.length < want) it.opts.push("");
+      it.picked = it.picked.filter(k => k < it.opts.length);
+      render();
+    };
+    r.append(m);
+    r.append(el("span", "hint", "Options adjust to twice the marks. Tick the correct statements."));
+    body.append(r);
+    optionList(body, it.opts, null, k => {
+      const j = it.picked.indexOf(k);
+      if (j >= 0) it.picked.splice(j, 1); else it.picked.push(k);
+    }, null, true, it.picked);
+    return;
+  }
+
+  if (T.match){
+    const menus = [];
+    const relabel = () => menus.forEach(sel => {
+      [...sel.options].forEach((o, j) => {
+        o.textContent = LETTERS[j] + (it.opts[j] ? " \u00b7 " + it.opts[j].slice(0, 18) : "");
+      });
+    });
+    if (it.t === "gapsummary"){
+      field(body, "Summary paragraph — write [] where each gap goes", it.summary,
+            v => { it.summary = v; save(); }, true);
+    }
+    body.append(el("div", "hint", T.match === "gap"
+      ? `Each item prints as a numbered gap marker. Put the same markers in your text booklet.`
+      : "Left column: the word, name or sentence opening students match."));
+    it.items.forEach((m, k) => {
+      const r = el("div", "opt");
+      r.append(el("span", "lt", (num.from + k) + "."));
+      if (T.match === "gap"){
+        r.append(Object.assign(el("span", "hint"), {textContent:`[ – ${num.from + k} – ]`,
+                 style:"flex:1;font-family:Arial;font-weight:700"}));
+      } else {
+        const inp = el("input"); inp.type = "text"; inp.value = m.text;
+        inp.placeholder = it.t === "vocab" ? "Word or phrase"
+                        : it.t === "halves" ? "Opening of the sentence" : "Item text";
+        inp.oninput = e => { m.text = e.target.value;
+                             it.t === "halves" ? render() : save(); };
+        r.append(inp);
+        if (it.t === "halves" && ellipsisAdded(m.text, false))
+          r.append(el("span", "hint", "+ …"));
+        if (it.t === "vocab"){
+          const ln = el("input"); ln.type = "number"; ln.min = 1;
+          ln.value = m.line == null ? "" : m.line;
+          ln.placeholder = "line";
+          ln.title = "Line number — printed as (line N)";
+          ln.style.cssText = "width:64px;flex:none;font-family:inherit";
+          ln.oninput = e => { m.line = e.target.value; save(); };
+          r.append(ln);
+        }
+      }
+      const s = el("select");
+      it.opts.forEach((o, j) => { const op = el("option", null, LETTERS[j] + (o ? " · " + o.slice(0,18) : ""));
+                                  op.value = j; if (m.answer === j) op.selected = true; s.append(op); });
+      s.onchange = e => { m.answer = +e.target.value; save(); };
+      s.style.maxWidth = "150px";
+      menus.push(s);
+      r.append(s);
+      const x = el("button", "icon del", "✕");
+      x.onclick = () => { it.items.splice(k, 1); render(); };
+      r.append(x);
+      body.append(r);
+    });
+    const addi = el("button", "btn mini", "Add item");
+    addi.onclick = () => { it.items.push({text:"", line:"", answer:0}); it.opts.push("", ""); render(); };
+    body.append(addi);
+    body.append(el("div", "hint", "Options — the IB always uses twice as many as items:"));
+    optionList(body, it.opts, null, null, relabel, false);
+    return;
+  }
+
+  if (it.t === "source"){
+    const menus = [];
+    const relabel = () => menus.forEach(sel => {
+      [...sel.options].forEach((o, j) => { o.textContent = it.cols[j] || "Source " + (j + 1); });
+    });
+    field(body, "Column heading", it.header, v => { it.header = v; save(); });
+    const r = el("div", "row");
+    it.cols.forEach((c, k) => {
+      const inp = el("input"); inp.type = "text"; inp.value = c;
+      inp.placeholder = "Source " + (k + 1);
+      inp.oninput = e => { it.cols[k] = e.target.value; save(); relabel(); };
+      r.append(inp);
+    });
+    body.append(r);
+    it.rows.forEach((row, k) => {
+      const rr = el("div", "opt");
+      rr.append(el("span", "lt", (num.from + k) + "."));
+      const inp = el("input"); inp.type = "text"; inp.value = row.text;
+      inp.placeholder = "Statement";
+      inp.oninput = e => { row.text = e.target.value; save(); };
+      rr.append(inp);
+      const s = el("select");
+      it.cols.forEach((c, j) => { const o = el("option", null, c || "Source " + (j+1));
+                                  o.value = j; if (row.answer === j) o.selected = true; s.append(o); });
+      s.onchange = e => { row.answer = +e.target.value; save(); };
+      s.style.maxWidth = "130px";
+      menus.push(s);
+      rr.append(s);
+      const x = el("button", "icon del", "✕");
+      x.onclick = () => { it.rows.splice(k, 1); render(); };
+      rr.append(x);
+      body.append(rr);
+    });
+    const add = el("button", "btn mini", "Add statement");
+    add.onclick = () => { it.rows.push({text:"", answer:0}); render(); };
+    body.append(add);
+    return;
+  }
+
+  if (it.t === "gapfill"){
+    field(body, "Caption above the box", it.caption, v => { it.caption = v; save(); });
+    field(body, "Stimulus — one bullet per line, [] marks a gap", it.stimulus,
+          v => { it.stimulus = v; save(); }, true);
+    body.append(el("div", "hint", "Gap numbers are filled in automatically, in order."));
+    it.gaps.forEach((g, k) => {
+      const r = el("div", "opt");
+      r.append(el("span", "lt", (num.from + k) + "."));
+      const inp = el("input"); inp.type = "text"; inp.value = g.answer;
+      inp.placeholder = "Answer for this gap";
+      inp.oninput = e => { g.answer = e.target.value; save(); };
+      r.append(inp);
+      const x = el("button", "icon del", "✕");
+      x.onclick = () => { it.gaps.splice(k, 1); render(); };
+      r.append(x);
+      body.append(r);
+    });
+    const add = el("button", "btn mini", "Add gap");
+    add.onclick = () => { it.gaps.push({answer:""}); render(); };
+    body.append(add);
+    return;
+  }
+
+  if (it.t === "shorttwo"){
+    field(body, "Question", it.stem, v => { it.stem = v; save(); }, true);
+    field(body, "Answer (a)", it.a, v => { it.a = v; save(); });
+    field(body, "Answer (b)", it.b, v => { it.b = v; save(); });
+    return;
+  }
+
+  // the written-answer family
+  if (it.t === "findword" || it.t === "complete"){
+    field(body, "Reference for the rubric — e.g. lines 1–15, or paragraphs 3–4",
+          it.ref, v => { it.ref = v; render(); });
+  }
+  field(body, it.t === "findword" ? "Definition students must find a word for"
+      : it.t === "refer" ? "Quoted phrase — put *asterisks* around the underlined word"
+      : it.t === "tf" ? "Statement students judge"
+      : it.t === "complete" ? "Opening of the sentence students complete"
+      : "Question", it.stem,
+      v => { it.stem = v; it.t === "complete" ? render() : save(); },
+      it.t !== "findword");
+  if (it.t === "complete" && ellipsisAdded(it.stem, false))
+    body.append(el("div", "hint", "An ellipsis is added: …"
+                                  + ellipsize(it.stem, false).slice(-32)));
+
+  if (it.t === "refer"){
+    const r = el("div", "row");
+    r.append(el("label", null, "Line"));
+    const ln = el("input"); ln.type = "text"; ln.value = it.line || "";
+    ln.placeholder = "15  or  8-9";
+    ln.style.cssText = "width:110px;flex:none";
+    ln.title = "Printed as (line 15) or (lines 8–9)";
+    ln.oninput = e => { it.line = e.target.value; render(); };
+    r.append(ln);
+    const prev = lineRef(it.line);
+    r.append(el("span", "hint", prev
+      ? "prints as " + prev.replace(/\\iblinepair\{(\d+)\}\{(\d+)\}/, "(lines $1–$2)")
+                          .replace(/\\ibline\{(\d+)\}/, "(line $1)")
+      : "added to the end of the phrase automatically"));
+    body.append(r);
+    field(body, "Answer", it.answer, v => { it.answer = v; save(); });
+    return;
+  }
+
+  if (it.t === "tf"){
+    const r = el("div", "row");
+    r.append(el("label", null, "Answer"));
+    const sel = el("select");
+    [["T","True"],["F","False"]].forEach(([v, lab]) => {
+      const o = el("option", null, lab); o.value = v;
+      if ((it.verdict || "T") === v) o.selected = true; sel.append(o);
+    });
+    sel.style.width = "92px";
+    sel.onchange = e => { it.verdict = e.target.value; save(); };
+    r.append(sel);
+    body.append(r);
+    field(body, "Justification — the words as they appear in the text",
+          it.quote || "", v => { it.quote = v; render(); });
+    const q = (it.quote || "").trim();
+    body.append(el("div", "hint", q
+      ? `markscheme will read:  ${it.verdict === "F" ? "F" : "T"}: “${q}”`
+      : "Quotation marks are added for you."));
+    return;
+  }
+
+  field(body, "Answer", it.answer, v => { it.answer = v; save(); });
+}
+
+/* ═══ palette ════════════════════════════════════════════════════════════ */
+
+function renderPalette(){
+  const p = $("#palette"); p.innerHTML = "";
+  const groups = [["structure","Structure"],
+                  [paper.kind, paper.kind === "reading" ? "Reading" : "Listening"],
+                  ["both","Both papers"]];
+  groups.forEach(([g, label]) => {
+    const heads = Object.entries(TYPES).filter(([, T]) => T.group === g);
+    if (!heads.length) return;
+    p.append(el("h4", null, label));
+    heads.forEach(([k, T]) => {
+      const b = el("button", "pbtn");
+      b.append(document.createTextNode(k === "text" && paper.kind === "listening" ? "Audio text" : T.name));
+      const hint = {mcq:paper.kind === "listening" ? "3 options" : "4 options",
+                    true:"n marks, 2n options", text:"starts a new page"}[k];
+      if (hint) b.append(el("small", null, hint));
+      b.onclick = () => { paper.items.push(blank(k)); render();
+                          window.scrollTo(0, document.body.scrollHeight); };
+      p.append(b);
+    });
+  });
+}
+
+/* ═══ actions ════════════════════════════════════════════════════════════ */
+
+function move(i, d){
+  const j = i + d;
+  if (j < 0 || j >= paper.items.length) return;
+  [paper.items[i], paper.items[j]] = [paper.items[j], paper.items[i]];
+  render();
+}
+function dup(i){
+  const c = JSON.parse(JSON.stringify(paper.items[i])); c.id = uid();
+  paper.items.splice(i + 1, 0, c); render();
+}
+function del(i){ paper.items.splice(i, 1); render(); }
+
+function save(){ try{ localStorage.setItem("ibeb.paper", JSON.stringify(paper)); }catch(e){} }
+function load(){
+  try{ const s = localStorage.getItem("ibeb.paper"); return s ? migrate(JSON.parse(s)) : null; }
+  catch(e){ return null; }
+}
+
+// older papers kept the line reference inside the word itself
+function migrate(p){
+  (p.items || []).forEach(it => {
+    if (it.t === "refer" && (it.line == null || !String(it.line).trim())){
+      const hit = /\(\s*lines?\s*(\d+)\s*(?:[-–—]\s*(\d+))?\s*\)/i.exec(it.stem || "");
+      it.line = hit ? (hit[2] ? hit[1] + "-" + hit[2] : hit[1]) : "";
+      if (hit) it.stem = (it.stem || "").replace(hit[0], "").trim();
+    }
+    if (it.t === "tf" && it.quote == null){
+      const hit = /^\s*(T|F|True|False)\s*[:：]\s*(.*)$/i.exec(it.answer || "");
+      it.verdict = hit ? hit[1][0].toUpperCase() : "T";
+      it.quote = hit ? hit[2].replace(/^[“"'`]+|[”"'`]+$/g, "").trim() : (it.answer || "").trim();
+    }
+    if (it.t !== "vocab") return;
+    (it.items || []).forEach(m => {
+      if (m.line != null && String(m.line).trim()) return;
+      const hit = /\(\s*lines?\s*(\d+)\s*\)/i.exec(m.text || "");
+      if (hit){ m.line = hit[1]; m.text = m.text.replace(hit[0], "").trim(); }
+      else m.line = "";
+    });
+  });
+  return p;
+}
+
+function download(name, text, type){
+  const b = new Blob([text], {type: type || "text/plain"});
+  const a = el("a"); a.href = URL.createObjectURL(b); a.download = name;
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+let lastPdf = null;
+
+async function compile(){
+  const btn = $("#compile"), st = $("#status");
+  btn.disabled = true; btn.textContent = "Compiling…";
+  st.className = "status"; st.textContent = "Running tectonic…";
+  try{
+    const r = await fetch("/compile", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({tex: buildTex()})
+    });
+    if (!r.ok){
+      const msg = await r.text();
+      $("#preview").style.display = "none";
+      $("#log").style.display = "block";
+      $("#log").textContent = msg;
+      st.className = "status bad"; st.textContent = "Compile failed";
+      return;
+    }
+    const warn = r.headers.get("X-Ibeb-Warnings");
+    const blob = await r.blob();
+    if (lastPdf) URL.revokeObjectURL(lastPdf);
+    lastPdf = URL.createObjectURL(blob);
+    $("#log").style.display = "none";
+    $("#preview").style.display = "block";
+    $("#preview").src = lastPdf + "#toolbar=1&navpanes=0";
+    $("#dlpdf").disabled = false;
+    st.className = warn ? "status bad" : "status";
+    st.textContent = warn ? warn : "Compiled · " + new Date().toLocaleTimeString();
+  }catch(e){
+    st.className = "status bad";
+    st.textContent = "Cannot reach the server — is `make ui` still running?";
+  }finally{
+    btn.disabled = false; btn.textContent = "Compile";
+  }
+}
+
+/* ═══ wiring ═════════════════════════════════════════════════════════════ */
+
+$("#kind").onchange = e => { paper.kind = e.target.value;
+  $("#target").value = paper.target = (paper.kind === "listening" ? 25 : 40);
+  renderPalette(); render(); };
+$("#session").oninput = e => { paper.session = e.target.value; save(); };
+$("#date").oninput = e => { paper.date = e.target.value; save(); };
+$("#target").oninput = e => { paper.target = +e.target.value; render(); };
+$("#compile").onclick = compile;
+$("#dltex").onclick = () => download("paper.tex", buildTex(), "text/x-tex");
+$("#dlpdf").onclick = () => { if (lastPdf){ const a = el("a");
+  a.href = lastPdf; a.download = "paper.pdf"; a.click(); } };
+$("#save").onclick = () => download("paper.json", JSON.stringify(paper, null, 2), "application/json");
+$("#load").onclick = () => $("#file").click();
+$("#file").onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const rd = new FileReader();
+  rd.onload = () => { try{ paper = migrate(JSON.parse(rd.result)); syncBar(); renderPalette(); render(); }
+                      catch(err){ alert("That file isn't a saved paper."); } };
+  rd.readAsText(f); e.target.value = "";
+};
+document.addEventListener("keydown", e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === "Enter"){ e.preventDefault(); compile(); }
+});
+
+function syncBar(){
+  $("#kind").value = paper.kind;
+  $("#session").value = paper.session;
+  $("#date").value = paper.date;
+  $("#target").value = paper.target;
+}
+
+syncBar(); renderPalette(); render();
+</script>
+</body>
+</html>

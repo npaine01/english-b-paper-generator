@@ -1,0 +1,61 @@
+%% paper1.tex
+%% ---------------------------------------------------------------------------
+%% English B HL Paper 1 — productive skills (writing). One page, three tasks.
+%%
+%%   tectonic -X compile paper1.tex
+%%
+%% Paper 1 is marked against three assessment criteria — Language, Message and
+%% Conceptual understanding, 30 marks in total — not question by question, so
+%% there is nothing for the mark checker to add up. \ibsetmaxmarks{0} tells it
+%% so. The .ans file still records each task's three text types.
+%%
+%% Spacing follows the November 2024 revision. For the earlier house values,
+%% add \ibpaperonelegacy to the preamble.
+%% ---------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+\usepackage{ibenglishb}
+
+\ibsetsession{2225\,--\,2252}
+\ibsetmaxmarks{0}
+
+\begin{document}
+
+% ═══════════════════════════════════════ COVER ═════════════════════════════
+\ibcover
+  {English B -- Higher level -- Paper 1}
+  {8 May 2025}
+  {1 h 30 m}
+  {\begin{ibinstructions}{Instructions to students}
+     \item Do not open this examination paper until instructed to do so.
+     \item Complete one task only.
+     \item You must complete the task on the answer sheet provided.
+     \item The maximum mark for this examination paper is \textbf{[30 marks]}.
+   \end{ibinstructions}}
+  {2 pages}
+  {\ibsessioncode}
+
+% ═══════════════════════════════════════ TASKS ═════════════════════════════
+\ibrubricpaperone
+
+\ibtask{You recently completed an online course that prepares you for your
+  chosen field of studies. The organizers have urged you to share your
+  experience with other people. Write a text in which you describe the online
+  course, evaluate what you learned from it, and make a recommendation to
+  others who might be interested.}
+  {Email}{Interview}{Social media posting}
+
+\ibtask{Examination anxiety causes much concern among pre-university students
+  around the world. You spoke to an expert to learn more about this issue, and
+  now you want to share this information with other students. Write a text in
+  which you describe the common symptoms of examination anxiety, explore the
+  ways this can affect students and present some techniques to reduce it.}
+  {Interview}{Proposal}{Set of instructions}
+
+\ibtask{You are a member of a local environmental organization. Six months ago
+  your town introduced new actions to reduce water usage in the community, and
+  your organization wants to know how successful these have been so far. Write
+  a text in which you outline the actions taken, evaluate their effectiveness,
+  and suggest the next steps.}
+  {Letter}{Report}{Social media posting}
+
+\end{document}
