@@ -361,6 +361,42 @@ sessions (`word`/`words`, `lines 12–23`/`lines 12 to 23`, colon or full stop):
 - The wavy stimulus border approximates the IB's; it is a TikZ `snake`
   decoration, not the exact house shape.
 
+## Engines and fonts
+
+The package runs under **XeLaTeX**, **LuaLaTeX** or **pdfLaTeX**, and detects
+which via `iftex`. Development and all measurement used
+[Tectonic](https://tectonic-typesetting.github.io/) (a self-contained XeTeX),
+which is the easiest to reproduce because it downloads what it needs:
+
+```bash
+brew install tectonic
+tectonic -X compile reading-question-booklet.tex
+```
+
+**Font.** Real IB papers are set in Arial 11 pt. The package tries, in order:
+
+| Engine | Font used |
+|---|---|
+| XeLaTeX / LuaLaTeX, Arial installed | Arial — matches the real papers exactly |
+| XeLaTeX / LuaLaTeX, no Arial | TeX Gyre Heros, automatically, with a warning |
+| pdfLaTeX | URW Nimbus Sans, via `helvet` |
+| any, forced | `\usepackage[font=heros]{ibenglishb}` |
+
+Arial ships with macOS and with Microsoft Office; a bare Linux box usually has
+neither, and gets the fallback.
+
+**The fallback is safe.** Heros and Nimbus Sans are Helvetica clones, and Arial
+is metrically compatible with Helvetica, so character widths agree. Compiling
+the same 10-page booklet both ways gives the same page count, the same number of
+lines and the same line breaks — nothing reflows. Every vertical constant is
+identical, because the grid comes from explicit lengths and struts rather than
+from glyph metrics. What differs is under 0.6 mm of horizontal drift in
+columns that size themselves to their content, and the glyph shapes themselves
+(Arial's angled terminals versus Helvetica's horizontal ones).
+
+Use Arial if you want output indistinguishable from a real paper. Use the
+fallback if you just want a correct exam.
+
 ## Licence
 
 MIT — see [`LICENSE`](LICENSE).

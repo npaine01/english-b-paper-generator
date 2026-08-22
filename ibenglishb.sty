@@ -34,15 +34,25 @@
 \else
   \RequirePackage{fontspec}
   \defaultfontfeatures{Ligatures=TeX}
+  % TeX Gyre Heros must be loaded by FILE, not by name: it ships with TeX (and
+  % inside the tectonic bundle) as .otf files rather than as an installed system
+  % font, so \setmainfont{TeX Gyre Heros} fails on any machine that has not
+  % separately installed it. That path is also the automatic Arial fallback, so
+  % getting it wrong breaks every build on a machine without Arial.
+  \newcommand\ibeb@heros{%
+    \setmainfont{texgyreheros}[Extension=.otf,UprightFont=*-regular,
+      BoldFont=*-bold,ItalicFont=*-italic,BoldItalicFont=*-bolditalic]}
   \def\ibeb@arial{arial}
   \ifx\ibeb@font\ibeb@arial
     \IfFontExistsTF{Arial}%
       {\setmainfont{Arial}[BoldFont=Arial Bold,ItalicFont=Arial Italic,
                            BoldItalicFont=Arial Bold Italic]}%
-      {\PackageWarning{ibenglishb}{Arial not found; using TeX Gyre Heros}%
-       \setmainfont{TeX Gyre Heros}}%
+      {\PackageWarning{ibenglishb}{Arial not found; falling back to TeX Gyre
+        Heros. It is metrically compatible, so measurements hold, but glyph
+        shapes differ from a real IB paper}%
+       \ibeb@heros}%
   \else
-    \setmainfont{TeX Gyre Heros}
+    \ibeb@heros
   \fi
 \fi
 
