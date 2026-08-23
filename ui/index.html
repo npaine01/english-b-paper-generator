@@ -410,6 +410,18 @@ function nextTextLabel(){
 }
 
 
+
+/* Several question types tie two lists together — identify-true-statements
+   needs twice as many options as marks, the matching types twice as many as
+   items. Growing is safe; shrinking can throw away something written, so ask
+   first and name what would go. */
+function shrinkOk(list, keep, what){
+  const lost = list.slice(keep).filter(x => String(x || "").trim());
+  if (!lost.length) return true;
+  return confirm(`This will discard ${lost.length} ${what}${lost.length === 1 ? "" : "s"} `
+    + `you have written:\n\n` + lost.map(o => "  \u2022 " + o).join("\n") + "\n\nContinue?");
+}
+
 /* Multiple choice is the one question type whose shape differs between the two
    papers, and the rubric wording is identical, so it is easy to get wrong:
    reading takes four options, listening takes three. It is fixed, not a
@@ -450,7 +462,7 @@ function blank(t){
   else if (t === "true")   Object.assign(b, {marks:4, opts:["","","","","","","",""], picked:[]});
   else if (t === "shorttwo") Object.assign(b, {stem:"", a:"", b:""});
   else if (t === "source") Object.assign(b, {header:"Whose opinion?", cols:["","","Both"], rows:[{text:"",answer:0}]});
-  else if (t === "gapfill")Object.assign(b, {stimulus:"", caption:"", gaps:[{answer:""},{answer:""}]});
+  else if (t === "gapfill")Object.assign(b, {stimulus:"", caption:"", gaps:[]});
   else if (T.match)        Object.assign(b, {ref:"", items:[{text:"",line:"",answer:0},{text:"",line:"",answer:1}],
                                              opts:["","","",""], summary:""});
   else if (t === "refer")  Object.assign(b, {stem:"", answer:"", ref:"", line:""});
@@ -481,7 +493,7 @@ function numbering(){
 function problems(it){
   const T = TYPES[it.t], out = [];
   if (it.t === "mcq"){
-    const want = paper.kind === "listening" ? 3 : 4;
+    const want = MCQ_OPTS(paper.kind);
     if (it.opts.length !== want)
       out.push(`${paper.kind === "listening" ? "Listening" : "Reading"} multiple choice takes ${want} options, not ${it.opts.length}.`);
     if (!it.opts.some(o => o.trim())) out.push("No options written yet.");
@@ -512,6 +524,30 @@ function problems(it){
     out.push("No justification quotation — the markscheme needs the words from the text.");
   if ((it.t === "findword" || it.t === "complete") && !it.ref.trim())
     out.push("No line or paragraph reference — the rubric needs one.");
+
+  /* The tick table had no rules at all, though it is the type most able to
+     produce a broken paper: an unnamed column prints an empty heading and
+     writes an empty answer into the markscheme. */
+  if (it.t === "source"){
+    const unnamed = it.cols.filter(c => !String(c || "").trim()).length;
+    if (unnamed)
+      out.push(`${unnamed} of ${it.cols.length} columns have no heading — each one `
+             + `prints as a blank header and as a blank answer in the markscheme.`);
+    if (!it.rows.length) out.push("No statements yet.");
+    const empty = it.rows.filter(r => !String(r.text || "").trim()).length;
+    if (empty) out.push(`${empty} statement${empty === 1 ? " has" : "s have"} no text.`);
+    if (!String(it.header || "").trim())
+      out.push("No column heading for the statements — the corpus always prints one.");
+  }
+
+  if (it.t === "shorttwo"){
+    const missing = [!String(it.a || "").trim() && "(a)", !String(it.b || "").trim() && "(b)"]
+      .filter(Boolean);
+    if (missing.length)
+      out.push(`This question is worth 2 marks and needs both answers — `
+             + `${missing.join(" and ")} ${missing.length === 1 ? "is" : "are"} empty.`);
+  }
+
   return out;
 }
 
@@ -1181,11 +1217,15 @@ function buildFields(body, it, num){
     r.append(el("label", null, "Marks"));
     const m = el("input"); m.type = "number"; m.min = 1; m.max = 8; m.value = it.marks;
     m.style.width = "62px";
-    m.oninput = e => {
-      it.marks = +e.target.value || 1;
-      const want = 2 * it.marks;
-      while (it.opts.length < want) it.opts.push("");
-      it.picked = it.picked.filter(k => k < it.opts.length);
+    m.onchange = e => {
+      const marks = Math.max(1, Math.min(8, +e.target.value || 1));
+      const want = 2 * marks;
+      if (it.opts.length > want && !shrinkOk(it.opts, want, "option")){
+        e.target.value = it.marks; return;          // keep what was written
+      }
+      it.marks = marks;
+      it.opts = fitOpts(it.opts, want);             // grows and shrinks
+      it.picked = it.picked.filter(k => k < want).slice(0, marks);
       render();
     };
     r.append(m);
@@ -1245,7 +1285,15 @@ function buildFields(body, it, num){
       menus.push(s);
       r.append(s);
       const x = el("button", "icon del", "✕");
-      x.onclick = () => { it.items.splice(k, 1); render(); };
+      x.title = "Remove this item and its two options";
+      x.onclick = () => {
+        const want = 2 * (it.items.length - 1);
+        if (it.opts.length > want && !shrinkOk(it.opts, want, "option")) return;
+        it.items.splice(k, 1);
+        it.opts = fitOpts(it.opts, want);
+        it.items.forEach(m2 => { if (m2.answer >= want) m2.answer = 0; });
+        render();
+      };
       r.append(x);
       body.append(r);
     });
