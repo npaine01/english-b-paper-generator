@@ -373,17 +373,21 @@ body[data-layout="bar"]  .balance{display:flex}
 
 
 
-/* Paper 1 text types, grouped as the subject documentation groups them.
-   `seen` is how often each was offered across the 2020-2026 Paper 1 booklets,
-   which is worth knowing: six of the listed types have never been offered. */
+/* Paper 1 text types, in the short forms the papers actually print — the
+   subject documentation lists them slash-joined ("Speech / presentation /
+   debate"), but a task offers one of them, spelled plainly.
+   `seen` counts how often each was offered across 48 task option-rows in the
+   2020-2026 papers. Four have never been offered; they are marked, not hidden,
+   because the specification permits them. */
 const TEXT_TYPES = [
-  ["Personal", [["Blog",14],["Diary (private) / journal",3],["Email",16],["Letter",3],
-                ["Personal statement / cover letter",1],["Social media posting / online forum",11]]],
-  ["Professional", [["Essay",0],["Proposal",10],["Report (official)",7],
-                    ["Set of instructions / guidelines",4]]],
-  ["Mass media", [["Article (newspaper, magazine)",8],["Brochure / leaflet / pamphlet",6],
-                  ["Interview",6],["News report",8],["Opinion column / letter to the editor",13],
-                  ["Review",6],["Speech / presentation / debate",19]]],
+  ["Personal", [["Blog",14],["Diary",3],["Journal entry",1],["Email",16],["Letter",3],
+                ["Personal statement",1],["Cover letter",0],["Social media posting",11],
+                ["Online forum posting",2]]],
+  ["Professional", [["Essay",0],["Proposal",10],["Report",5],["Official report",2],
+                    ["Set of instructions",1],["Set of guidelines",6],["Guidelines",3]]],
+  ["Mass media", [["Article",8],["Brochure",0],["Leaflet",1],["Pamphlet",5],["Interview",6],
+                  ["News report",8],["Opinion column",4],["Letter to the editor",9],
+                  ["Review",6],["Speech",17],["Presentation",2],["Debate",0]]],
 ];
 const ALL_TEXT_TYPES = TEXT_TYPES.flatMap(([, ts]) => ts.map(([n]) => n));
 
@@ -540,7 +544,7 @@ function blank(t){
   const b = {id:uid(), t};
   const T = TYPES[t];
   if (t === "text")        Object.assign(b, {label:nextTextLabel(), title:""});
-  else if (t === "task")   Object.assign(b, {scenario:"", types:["Email","Proposal","Speech / presentation / debate"]});
+  else if (t === "task")   Object.assign(b, {scenario:"", types:["Email","Proposal","Speech"]});
   else if (t === "mcq")    Object.assign(b, {stem:"", answer:0,
                              opts:fitOpts([], MCQ_OPTS(typeof paper === "undefined" || !paper ? "reading" : paper.kind))});
   else if (t === "true"){
