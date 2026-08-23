@@ -299,12 +299,20 @@ body[data-layout="bar"]  .balance{display:flex}
     <select id="kind">
       <option value="reading">P2 Reading</option>
       <option value="listening">P2 Listening</option>
+      <option value="paper1">P1 Writing</option>
     </select>
   </div>
   <div class="field"><label for="session">Session</label><input type="text" id="session" value="QDHS 2026"></div>
   <div class="field"><label for="date">Date</label><input type="text" id="date" value="8 May 2026"></div>
   <div class="field"><label for="target">Target</label><input type="number" id="target" value="40" min="0" max="99"></div>
   <div class="spacer"></div>
+  <div class="field">
+    <label for="instr">Instructions</label>
+    <select id="instr">
+      <option value="standard">As printed</option>
+      <option value="short">Short (formative)</option>
+    </select>
+  </div>
   <div class="field">
     <label for="theme">Theme</label>
     <select id="theme">
@@ -364,6 +372,57 @@ body[data-layout="bar"]  .balance{display:flex}
 
 
 
+
+/* Paper 1 text types, grouped as the subject documentation groups them.
+   `seen` is how often each was offered across the 2020-2026 Paper 1 booklets,
+   which is worth knowing: six of the listed types have never been offered. */
+const TEXT_TYPES = [
+  ["Personal", [["Blog",14],["Diary (private) / journal",3],["Email",16],["Letter",3],
+                ["Personal statement / cover letter",1],["Social media posting / online forum",11]]],
+  ["Professional", [["Essay",0],["Proposal",10],["Report (official)",7],
+                    ["Set of instructions / guidelines",4]]],
+  ["Mass media", [["Article (newspaper, magazine)",8],["Brochure / leaflet / pamphlet",6],
+                  ["Interview",6],["News report",8],["Opinion column / letter to the editor",13],
+                  ["Review",6],["Speech / presentation / debate",19]]],
+];
+const ALL_TEXT_TYPES = TEXT_TYPES.flatMap(([, ts]) => ts.map(([n]) => n));
+
+/* Instructions as the papers print them, plus a shorter set for classroom use.
+   Paper 1's real list is only three lines; the productive papers carry more. */
+const INSTRUCTIONS = {
+  reading: {
+    standard: ["Write your session number in the boxes above.",
+               "Do not open this examination paper until instructed to do so.",
+               "Answer all questions. Each question is allocated \\textbf{[1 mark]} unless otherwise stated.",
+               "Answers must be written within the answer boxes provided.",
+               "All answers must be based on the appropriate texts in the accompanying text booklet.",
+               "The maximum mark for this examination paper is \\textbf{[MARKS marks]}."],
+    short:    ["Answer all questions. Each question is allocated \\textbf{[1 mark]} unless otherwise stated.",
+               "Answers must be based on the accompanying texts.",
+               "The maximum mark is \\textbf{[MARKS marks]}."] },
+  listening: {
+    standard: ["Write your session number in the boxes above.",
+               "Do not open this examination paper until instructed to do so.",
+               "Answer all questions. Each question is allocated \\textbf{[1 mark]} unless otherwise stated.",
+               "Answers must be written within the answer boxes provided.",
+               "Notes may be written in the spaces provided. Notes will not be marked.",
+               "Answers and notes may be written at any time during the examination.",
+               "There will be three audio texts. All answers must be based on the appropriate audio texts.",
+               "There will be four minutes of reading time at the start of each audio text.",
+               "Each audio text will be played twice. There will be a two-minute pause before each audio text is repeated.",
+               "The maximum mark for this examination paper is \\textbf{[MARKS marks]}."],
+    short:    ["Answer all questions. Each question is allocated \\textbf{[1 mark]} unless otherwise stated.",
+               "Notes may be written in the spaces provided. Notes will not be marked.",
+               "Each audio text will be played twice.",
+               "The maximum mark is \\textbf{[MARKS marks]}."] },
+  paper1: {
+    standard: ["Do not turn over this examination paper until instructed to do so.",
+               "Complete one task.",
+               "The maximum mark for this examination paper is \\textbf{[30 marks]}."],
+    short:    ["Complete one task.",
+               "The maximum mark is \\textbf{[30 marks]}."] },
+};
+
 /* Identify true statements carries a different number of marks on each paper:
    listening asks for five every time (7 of 7 booklets), reading for four or
    three (four in 7 booklets, three in 4). Only the default differs — the
@@ -394,6 +453,7 @@ const mkind = it => MATCH_KINDS[it.kind] || MATCH_KINDS.headings;
 const TYPES = {
   text:      {name:"Text section",              group:"structure"},
   brk:       {name:"Page break",                group:"structure"},
+  task:      {name:"Task",                      group:"paper1",  rubric:"paperone"},
   mcq:       {name:"Multiple choice",           group:"both",   rubric:"mcq"},
   true:      {name:"Identify true statements",  group:"both",   rubric:null},
   short:     {name:"Short answer",              group:"both",   rubric:"short"},
@@ -480,6 +540,7 @@ function blank(t){
   const b = {id:uid(), t};
   const T = TYPES[t];
   if (t === "text")        Object.assign(b, {label:nextTextLabel(), title:""});
+  else if (t === "task")   Object.assign(b, {scenario:"", types:["Email","Proposal","Speech / presentation / debate"]});
   else if (t === "mcq")    Object.assign(b, {stem:"", answer:0,
                              opts:fitOpts([], MCQ_OPTS(typeof paper === "undefined" || !paper ? "reading" : paper.kind))});
   else if (t === "true"){
@@ -504,7 +565,7 @@ function numbering(){
   return paper.items.map(it => {
     const T = TYPES[it.t];
     let from = null, to = null, m = 0;
-    if (it.t === "text" || it.t === "brk") return {from:null, to:null, m:0};
+    if (it.t === "text" || it.t === "brk" || it.t === "task") return {from:null, to:null, m:0};
     if (it.t === "true")            { from = ++q; to = from; m = +it.marks || 0; }
     else if (it.t === "short" && it.two) { from = ++q; to = from; m = 2; }
     else if (T.match)               { from = q + 1; q += it.items.length; to = q; m = it.items.length; }
@@ -599,6 +660,7 @@ const RUBRIC = {
   refer:"\\ibrubricrefer", headings:"\\ibrubricheadings", matchq:"\\ibrubricmatchq",
   vocab:"\\ibrubricvocab", people:"\\ibrubricpeople", halves:"\\ibrubrichalves",
   gapsummary:"\\ibrubricgapsummary", source:"\\ibrubricsource", gapfill:"\\ibrubricgapfill",
+  paperone:"\\ibrubricpaperone",
 };
 
 // The IB ends a stem with an ellipsis wherever the options or the answer
@@ -639,16 +701,22 @@ function refTex(r){
 
 function buildTex(){
   const L = [], n = numbering();
-  const title = paper.kind === "listening"
-    ? "English B -- Higher level -- Paper 2 -- Listening comprehension"
-    : "English B -- Higher level -- Paper 2 -- Reading comprehension";
+  const TITLES = {
+    reading:   "English B -- Higher level -- Paper 2 -- Reading comprehension",
+    listening: "English B -- Higher level -- Paper 2 -- Listening comprehension",
+    paper1:    "English B -- Higher level -- Paper 1",
+  };
+  const title = TITLES[paper.kind] || TITLES.reading;
+  const marks = paper.kind === "paper1" ? 30 : (+paper.target || 0);
 
   L.push("% generated by the English B paper generator");
   L.push("\\documentclass[11pt,a4paper]{article}");
   L.push("\\usepackage{ibenglishb}");
   L.push("");
   L.push(`\\ibsetsession{${tex(paper.session)}}`);
-  L.push(`\\ibsetmaxmarks{${+paper.target || 0}}`);
+  /* Paper 1 is marked against criteria, not question by question, so there is
+     nothing for the mark checker to total. */
+  L.push(`\\ibsetmaxmarks{${paper.kind === "paper1" ? 0 : marks}}`);
   if (paper.kind === "listening") L.push("\\ibnotesonall");
   L.push("");
   L.push("\\begin{document}");
@@ -656,17 +724,10 @@ function buildTex(){
   L.push("\\ibcover");
   L.push(`  {${title}}`);
   L.push(`  {${tex(paper.date)}}`);
-  L.push("  {1 h}");
+  L.push(`  {${paper.kind === "paper1" ? "1 h 30 m" : "1 h"}}`);
   L.push("  {\\begin{ibinstructions}{Instructions to students}");
-  L.push("     \\item Write your session number in the boxes above.");
-  L.push("     \\item Do not open this examination paper until instructed to do so.");
-  L.push("     \\item Answer all questions. Each question is allocated \\textbf{[1 mark]} unless otherwise stated.");
-  L.push("     \\item Answers must be written within the answer boxes provided.");
-  if (paper.kind === "listening")
-    L.push("     \\item There will be three audio texts. Each will be played twice.");
-  else
-    L.push("     \\item All answers must be based on the appropriate texts in the accompanying text booklet.");
-  L.push(`     \\item The maximum mark for this examination paper is \\textbf{[${+paper.target || 0} marks]}.`);
+  const set = (INSTRUCTIONS[paper.kind] || INSTRUCTIONS.reading)[paper.instructions === "short" ? "short" : "standard"];
+  set.forEach(line => L.push("     \\item " + line.replace("MARKS", marks)));
   L.push("   \\end{ibinstructions}}");
   L.push("  {}{\\ibsessioncode}");
   L.push("");
@@ -697,7 +758,11 @@ function buildTex(){
       lastRubric = key;
     }
 
-    if (it.t === "mcq"){
+    if (it.t === "task"){
+      const three = (it.types || []).slice(0, 3).sort((a, b) => a.localeCompare(b));
+      L.push(`\\ibtask{${tex(it.scenario)}}`);
+      L.push("  " + three.map(t => `{${tex(t)}}`).join(""));
+    } else if (it.t === "mcq"){
       L.push(`\\begin{ibmcq}[${LETTERS[it.answer] || ""}]{${tex(ellipsize(it.stem, true))}}`);
       it.opts.forEach(o => L.push(`  \\opt{${tex(o)}}`));
       L.push("\\end{ibmcq}");
@@ -1223,6 +1288,46 @@ function buildFields(body, it, num){
     return;
   }
 
+  if (it.t === "task"){
+    field(body, "Scenario — what the student is asked to write about", it.scenario,
+          v => { it.scenario = v; save(); }, true);
+    body.append(el("div", "hint",
+      "Every task in the corpus ends \u201cWrite a text in which you \u2026\u201d followed by three "
+      + "things to do. That framing is what makes it an English B task."));
+
+    /* The three options a task offers. They print alphabetically in all forty
+       task rows measured across the 2020-2026 papers, so they are sorted for
+       you rather than left to the order you happened to pick them in. */
+    it.types = (it.types || []).slice(0, 3);
+    while (it.types.length < 3) it.types.push(ALL_TEXT_TYPES[0]);
+    it.types.forEach((tt, k) => {
+      const r = el("div", "opt");
+      r.append(el("span", "lt", String(k + 1)));
+      const sel = el("select");
+      TEXT_TYPES.forEach(([cat, list]) => {
+        const g = document.createElement("optgroup"); g.label = cat;
+        list.forEach(([name, seen]) => {
+          const o = el("option", null, name + (seen ? "" : "   (never offered)"));
+          o.value = name; if (tt === name) o.selected = true; g.append(o);
+        });
+        sel.append(g);
+      });
+      sel.style.flex = "1";
+      sel.onchange = e => { it.types[k] = e.target.value; render(); };
+      r.append(sel);
+      body.append(r);
+    });
+
+    const cats = it.types.map(t =>
+      (TEXT_TYPES.find(([, l]) => l.some(([n]) => n === t)) || ["?"])[0]);
+    body.append(el("div", "hint",
+      "Categories offered: " + [...new Set(cats)].join(", ")
+      + ". Papers mix them freely \u2014 only 6 of 40 tasks measured offered one of each."));
+    const dupes = it.types.length !== new Set(it.types).size;
+    if (dupes) body.append(el("div", "flag", "The same text type is offered twice."));
+    return;
+  }
+
   if (it.t === "mcq"){
     field(body, "Question", it.stem, v => { it.stem = v; render(); }, true);
     if (ellipsisAdded(it.stem, true))
@@ -1621,8 +1726,12 @@ function renderPalette(){
   const p = $("#palette"); p.innerHTML = "";
   /* Only the types that can go on this paper are offered, so grouping them by
      which paper they belong to says nothing — it is one list. */
+  /* Paper 1 is three writing tasks and nothing else — the comprehension types
+     that both Paper 2 papers share do not belong on it. */
   Object.entries(TYPES)
-    .filter(([, T]) => T.group === "structure" || T.group === "both" || T.group === paper.kind)
+    .filter(([k, T]) => paper.kind === "paper1"
+      ? (T.group === "paper1" || k === "brk")
+      : (T.group === "structure" || T.group === "both" || T.group === paper.kind))
     .forEach(([k, T]) => {
       const b = el("button", "pbtn");
       b.append(document.createTextNode(
@@ -1747,9 +1856,12 @@ $("#kind").onchange = e => {
   }
   paper.kind = kind;
   normaliseMcq(kind);
-  $("#target").value = paper.target = (kind === "listening" ? 25 : 40);
+  $("#target").value = paper.target =
+    kind === "paper1" ? 30 : kind === "listening" ? 25 : 40;
+  $("#target").disabled = kind === "paper1";
   renderPalette(); render();
 };
+$("#instr").onchange = e => { paper.instructions = e.target.value; render(); };
 $("#session").oninput = e => { paper.session = e.target.value; save(); };
 $("#date").oninput = e => { paper.date = e.target.value; save(); };
 $("#target").oninput = e => { paper.target = +e.target.value; render(); };
@@ -1783,6 +1895,7 @@ function syncBar(){
   $("#session").value = paper.session;
   $("#date").value = paper.date;
   $("#target").value = paper.target;
+  $("#instr").value = paper.instructions || "standard";
 }
 
 $("#theme").onchange = e => applyTheme(e.target.value);
