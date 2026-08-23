@@ -185,6 +185,28 @@ def check_summary_gaps(doc):
     return bad
 
 
+
+def check_twoanswer(doc):
+    """The 'Give two answers' box: (a) and (b) baselines and the label column.
+
+    A distinct set of constants from the single-answer box (20.86mm tall rather
+    than 15.01, two writing lines rather than one), so it needs its own check.
+    """
+    pitches, labelx = [], []
+    for p in doc:
+        rows = {}
+        for x, y, t in lines(p):
+            # the label arrives joined to its dotted run, so match the prefix
+            lab = t.strip()[:3]
+            if lab in ("(a)", "(b)"):
+                rows.setdefault(lab, []).append((y, x))
+        if "(a)" in rows and "(b)" in rows:
+            for (ya, xa), (yb, _) in zip(sorted(rows["(a)"]), sorted(rows["(b)"])):
+                pitches.append(round(yb - ya, 2))
+                labelx.append(round(xa - 15.0, 2))     # from the left margin
+    return pitches, labelx
+
+
 def check_boxes(doc):
     """Answer boxes: height, offset below the stem, dotted-line position."""
     heights, gaps, dots = [], [], []
@@ -315,6 +337,11 @@ def run(path, notes_expected):
     ip = check_items(doc)
     if ip:
         ok("matching item pitch (last -> next)", sum(ip) / len(ip), 9.80)
+
+    tp, tx = check_twoanswer(doc)
+    if tp:
+        ok("two-answer box: (a) -> (b) pitch", sum(tp) / len(tp), 7.16)
+        ok("two-answer box: label column", sum(tx) / len(tx), 10.80)
 
     tr = check_tickrows(doc)
     if tr:
