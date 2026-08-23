@@ -291,6 +291,10 @@
 \newcommand\ibparas[2]{\textbf{paragraphs\,\ibbadge{#1}--\ibbadge{#2}}}
 \newcommand\iblines[2]{\textbf{lines #1--#2}}
 \newcommand\iblinesto[2]{\textbf{lines #1 to #2}}
+% A rubric citing one line rather than a range. Rare — one instance in the
+% reading corpus — but it is printed bold like every other rubric reference,
+% unlike \ibline, which is the parenthesised form used beside a question.
+\newcommand\iblineone[1]{\textbf{line #1}}
 \newcommand\ibline[1]{(line #1)}
 \newcommand\iblinepair[2]{(lines #1--#2)}
 \newcommand\ibu[1]{\underline{#1}}

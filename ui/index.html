@@ -766,13 +766,22 @@ function lineRef(v){
   return one ? `\\ibline{${one[1]}}` : "";
 }
 
+/* A rubric can cite a line or a paragraph, one or a range, and a line range
+   may be joined by a dash or by the word "to". All five forms appear in the
+   reading corpus — lines-dash 24, paragraph 8, paragraphs-dash 6, lines-to 6,
+   line 1 — and the papers print them differently, so what the teacher types is
+   preserved rather than normalised to one of them. */
 function refTex(r){
   const s = (r || "").trim();
-  let m = s.match(/^\s*lines?\s*(\d+)\s*[-–—to]+\s*(\d+)\s*$/i);
+  let m = s.match(/^lines?\s*(\d+)\s*to\s*(\d+)$/i);
+  if (m) return `\\iblinesto{${m[1]}}{${m[2]}}`;
+  m = s.match(/^lines?\s*(\d+)\s*[-–—]\s*(\d+)$/i);
   if (m) return `\\iblines{${m[1]}}{${m[2]}}`;
-  m = s.match(/^\s*paragraphs?\s*(\d+)\s*[-–—to]+\s*(\d+)\s*$/i);
+  m = s.match(/^line\s*(\d+)$/i);
+  if (m) return `\\iblineone{${m[1]}}`;
+  m = s.match(/^paragraphs?\s*(\d+)\s*(?:[-–—]|to)\s*(\d+)$/i);
   if (m) return `\\ibparas{${m[1]}}{${m[2]}}`;
-  m = s.match(/^\s*paragraph\s*(\d+)\s*$/i);
+  m = s.match(/^paragraphs?\s*(\d+)$/i);
   if (m) return `\\ibpara{${m[1]}}`;
   return tex(s);
 }
