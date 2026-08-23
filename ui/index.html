@@ -363,6 +363,13 @@ body[data-layout="bar"]  .balance{display:flex}
 /* ═══ model ═══════════════════════════════════════════════════════════════ */
 
 
+
+/* Identify true statements carries a different number of marks on each paper:
+   listening asks for five every time (7 of 7 booklets), reading for four or
+   three (four in 7 booklets, three in 4). Only the default differs — the
+   teacher may still set any number. */
+const TRUE_MARKS = kind => (kind === "listening" ? 5 : 4);
+
 /* The six matching question types are one assembly on the page — a left column,
    a square, a rule, a lettered option list — differing only in their rubric and
    in what the left column holds. So they are one type here with a kind, rather
@@ -475,7 +482,10 @@ function blank(t){
   if (t === "text")        Object.assign(b, {label:nextTextLabel(), title:""});
   else if (t === "mcq")    Object.assign(b, {stem:"", answer:0,
                              opts:fitOpts([], MCQ_OPTS(typeof paper === "undefined" || !paper ? "reading" : paper.kind))});
-  else if (t === "true")   Object.assign(b, {marks:4, opts:["","","","","","","",""], picked:[]});
+  else if (t === "true"){
+    const mk = TRUE_MARKS(typeof paper === "undefined" || !paper ? "reading" : paper.kind);
+    Object.assign(b, {marks:mk, opts:fitOpts([], 2 * mk), picked:[]});
+  }
   else if (t === "source") Object.assign(b, {header:"Whose opinion?", cols:["","","Both"], rows:[{text:"",answer:0}]});
   else if (t === "gapfill")Object.assign(b, {stimulus:"", caption:"", gaps:[]});
   else if (T.match)        Object.assign(b, {kind:"headings", ref:"", items:[{text:"",line:"",answer:0},{text:"",line:"",answer:1}],
@@ -1249,6 +1259,11 @@ function buildFields(body, it, num){
     r.append(m);
     r.append(el("span", "hint", "Options adjust to twice the marks. Tick the correct statements."));
     body.append(r);
+    const norm = TRUE_MARKS(paper.kind);
+    if (+it.marks !== norm)
+      body.append(el("div", "hint", paper.kind === "listening"
+        ? `Every listening paper in the corpus asks for ${norm} true statements.`
+        : `Reading papers ask for ${norm} or 3; ${norm} is the more common.`));
     optionList(body, it.opts, null, k => {
       const j = it.picked.indexOf(k);
       if (j >= 0) it.picked.splice(j, 1); else it.picked.push(k);
@@ -1613,7 +1628,7 @@ function renderPalette(){
       b.append(document.createTextNode(
         k === "text" && paper.kind === "listening" ? "Audio text" : T.name));
       const hint = {mcq: MCQ_OPTS(paper.kind) + " options",
-                    true: "n marks, 2n options",
+                    true: TRUE_MARKS(paper.kind) + " marks, " + (2 * TRUE_MARKS(paper.kind)) + " options",
                     short: "one answer, or two",
                     match: "six kinds, one layout",
                     text: "starts a new page"}[k];
