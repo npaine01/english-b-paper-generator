@@ -381,6 +381,23 @@ body[data-layout="bar"]  .balance{display:flex}
 
 
 
+
+/* Which question types can live on a given paper. Switching paper kind has to
+   deal with what is already written: a reading paper's Matching blocks cannot
+   go on a listening paper, and none of the comprehension types belong on
+   Paper 1 at all. */
+function allowedOn(kind, t){
+  const T = TYPES[t];
+  if (!T) return false;
+  if (kind === "paper1") return T.group === "paper1" || t === "brk";
+  return T.group === "structure" || T.group === "both" || T.group === kind;
+}
+function strandedBy(kind){
+  return paper.items
+    .map((it, i) => ({ it, i }))
+    .filter(({ it }) => !allowedOn(kind, it.t));
+}
+
 /* Paper 1 text types, in the short forms the papers actually print — the
    subject documentation lists them slash-joined ("Speech / presentation /
    debate"), but a task offers one of them, spelled plainly.
@@ -627,6 +644,9 @@ function problems(it){
   /* The tick table had no rules at all, though it is the type most able to
      produce a broken paper: an unnamed column prints an empty heading and
      writes an empty answer into the markscheme. */
+  if (!allowedOn(paper.kind, it.t))
+    out.push(`${TYPES[it.t] ? TYPES[it.t].name : it.t} does not belong on this paper type.`);
+
   if (it.t === "task"){
     if (!String(it.scenario || "").trim()) out.push("No scenario written yet.");
     else if (!/write a text in which you/i.test(it.scenario))
@@ -1899,7 +1919,22 @@ async function compile(){
 /* ═══ wiring ═════════════════════════════════════════════════════════════ */
 
 $("#kind").onchange = e => {
-  const kind = e.target.value, lost = mcqDrift(kind);
+  const kind = e.target.value;
+
+  /* Anything that cannot exist on the new paper has to go, but not silently —
+     it is the teacher's writing. */
+  const stranded = strandedBy(kind);
+  if (stranded.length){
+    const names = [...new Set(stranded.map(({ it }) => TYPES[it.t].name))];
+    const ok = confirm(
+      `${stranded.length} question${stranded.length === 1 ? "" : "s"} cannot go on a `
+      + `${kind === "paper1" ? "P1 Writing" : kind === "listening" ? "P2 Listening" : "P2 Reading"} paper `
+      + `and will be removed:\n\n` + names.map(n => "  \u2022 " + n).join("\n")
+      + `\n\nSave the paper first if you want to keep them.\n\nContinue?`);
+    if (!ok){ e.target.value = paper.kind; return; }
+  }
+
+  const lost = mcqDrift(kind);
   if (lost.length){
     const n = MCQ_OPTS(kind);
     const ok = confirm(
@@ -1909,6 +1944,7 @@ $("#kind").onchange = e => {
       + lost.map(o => "  • " + o).join("\n") + "\n\nContinue?");
     if (!ok){ e.target.value = paper.kind; return; }
   }
+  paper.items = paper.items.filter(it => allowedOn(kind, it.t));
   paper.kind = kind;
   normaliseMcq(kind);
   $("#target").value = paper.target =
