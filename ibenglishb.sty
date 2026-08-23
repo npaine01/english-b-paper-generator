@@ -798,6 +798,22 @@
      \setlength\partopsep{0pt}}}%
   {\end{list}}
 
+% Second-level bullets. The stimulus box is a free-form document — across the
+% corpus it appears as notes, an e-flyer, a slide, guidelines and a profile —
+% and two of the six nest one level deep with an open bullet.
+\newcommand\ibeb@openbullet{\raisebox{0.15ex}{\scriptsize\ensuremath{\circ}}}
+\newenvironment{ibstimsub}%
+  {\begin{list}{\ibeb@openbullet}{%
+     \setlength\leftmargin{11mm}\setlength\labelwidth{3mm}%
+     \setlength\labelsep{2mm}\setlength\itemsep{\ibstimitemsep}%
+     \setlength\parsep{0pt}\setlength\topsep{\ibstimtopsep}%
+     \setlength\partopsep{0pt}}}%
+  {\end{list}}
+
+% A plain line inside the stimulus: no bullet, no indent. Several stimuli carry
+% running sentences and a contact-details footer alongside their lists.
+\newcommand\ibstimline[1]{\par\noindent #1\par\vspace{\ibstimitemsep}}
+
 \newcommand\ibstimcaption[1]{%
   \par\noindent\textbf{#1}\par\vspace{2.5mm}}
 

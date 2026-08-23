@@ -6,7 +6,7 @@
 <title>English B paper generator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=EB+Garamond:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{
   --paper:#F7F7F4; --card:#FFF; --sunk:#EFEFEA;
@@ -16,6 +16,9 @@
   --ok:#2F6B57; --ok-soft:#E4F0EA;
   --warn:#9A6316; --warn-soft:#FAEEDC;
   --focus:#A3273F;
+  --ui:Archivo,system-ui,-apple-system,sans-serif;
+  --display:Archivo,system-ui,-apple-system,sans-serif;
+  --h1:#A3273F; --h2:#2F6B57; --h3:#6B7BA8; --h4:#8A6FA8; --h5:#8A8F97;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --paper:#131417; --card:#1B1D21; --sunk:#232529;
@@ -26,6 +29,22 @@
   --warn:#DFAE72; --warn-soft:#2E2519;
   --focus:#E8899C;
 }}
+/* QDHS — Qibao Dwight brand guidelines, 12 May 2021.
+   QD Red C8102E carries accent; QD Blue 00205B carries success. The brand
+   supplies no third semantic colour, so warnings use an ochre from outside
+   the palette rather than reusing red, which already means "broken". */
+:root[data-theme="qdhs"]{
+  --paper:#F2F5F9; --card:#FFF; --sunk:#E9EAF0;
+  --ink:#343333; --ink-2:#55637F; --ink-3:#7189B7;
+  --rule:#D6DEEC; --rule-2:#E9EAF0;
+  --accent:#C8102E; --accent-soft:#FBE7EA;
+  --ok:#00205B; --ok-soft:#DAE5EF;
+  --warn:#8A5A12; --warn-soft:#F6EBDA;
+  --focus:#C8102E;
+  --ui:'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --display:'EB Garamond','Adobe Garamond Pro',Garamond,'Times New Roman',serif;
+  --h1:#C8102E; --h2:#00205B; --h3:#7189B7; --h4:#003E7E; --h5:#ACC6E2;
+}
 :root[data-theme="dark"]{
   --paper:#131417; --card:#1B1D21; --sunk:#232529;
   --ink:#ECECE9; --ink-2:#AFB3B9; --ink-3:#7E838B;
@@ -34,12 +53,13 @@
   --ok:#7FC6AA; --ok-soft:#1C2B26;
   --warn:#DFAE72; --warn-soft:#2E2519;
   --focus:#E8899C;
+  --h1:#E8899C; --h2:#7FC6AA; --h3:#8FA8DC; --h4:#B79BD8; --h5:#7E838B;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
   margin:0;background:var(--paper);color:var(--ink);
-  font-family:Archivo,system-ui,-apple-system,sans-serif;font-size:14px;
+  font-family:var(--ui);font-size:14px;
   display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased;
 }
 button,input,select,textarea{font:inherit;color:inherit}
@@ -50,7 +70,7 @@ button,input,select,textarea{font:inherit;color:inherit}
   display:flex;align-items:center;gap:14px;padding:9px 16px;
   background:var(--card);border-bottom:1px solid var(--rule);flex:none;flex-wrap:wrap
 }
-.brand{font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+.brand{font-weight:600;font-size:16px;font-family:var(--display);letter-spacing:-.01em;white-space:nowrap}
 .brand span{color:var(--accent)}
 .bar .sep{width:1px;height:22px;background:var(--rule-2)}
 .field{display:flex;align-items:center;gap:6px}
@@ -164,8 +184,105 @@ input[type=text]:hover,textarea:hover,select:hover{border-color:var(--ink-3)}
 .pbtn:hover{border-color:var(--accent);color:var(--accent)}
 .pbtn small{display:block;color:var(--ink-3);font-size:10.5px;margin-top:1px}
 .pbtn:hover small{color:var(--ink-3)}
+
+.help{margin:2px 0 4px}
+.help summary{
+  cursor:pointer;font-size:11.5px;color:var(--ink-3);list-style:none;
+  display:inline-flex;align-items:center;gap:5px;padding:3px 0;user-select:none
+}
+.help summary::-webkit-details-marker{display:none}
+.help summary::before{content:"?";
+  display:inline-flex;align-items:center;justify-content:center;
+  width:14px;height:14px;border-radius:50%;border:1px solid currentColor;
+  font-size:9.5px;font-weight:700;flex:none}
+.help summary:hover{color:var(--ink)}
+.helpbody{
+  font-size:11.5px;line-height:1.55;color:var(--ink-2);background:var(--sunk);
+  border-radius:5px;padding:9px 11px;margin-top:5px
+}
+.helpbody p{margin:0 0 7px}
+.helpbody p:last-child{margin-bottom:0}
+.helpbody code{
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;background:var(--card);
+  border:1px solid var(--rule);border-radius:3px;padding:0 3px
+}
+
+/* ── outline rail / balance bar ───────────────────────── */
+.rail{
+  border-right:1px solid var(--rule);background:var(--card);
+  display:flex;flex-direction:column;min-height:0;overflow:hidden
+}
+.railhead{display:flex;align-items:center;gap:6px;padding:11px 12px 7px}
+.railhead .lbl{
+  font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:600;flex:1
+}
+.railbody{flex:1;overflow-y:auto;padding:0 7px 8px;display:flex;flex-direction:column;gap:1px}
+.railrow{display:flex;align-items:flex-start;border-radius:5px}
+.railrow.on{background:var(--sunk)}
+.chev{
+  border:0;background:transparent;padding:6px 3px;line-height:0;color:var(--ink-3);
+  cursor:pointer;flex:none;border-radius:4px
+}
+.chev:hover{color:var(--ink)}
+.chev svg{transition:transform .12s}
+.railrow.open .chev svg{transform:rotate(90deg)}
+.railsel{
+  flex:1;border:0;background:transparent;text-align:left;padding:5px 5px 6px 2px;
+  cursor:pointer;min-width:0;color:inherit
+}
+.railsel .t1{display:flex;align-items:baseline;gap:7px}
+.railsel .nm{font-weight:700;font-size:12.5px;white-space:nowrap}
+.railrow.on .nm{color:var(--accent)}
+.railsel .ti{
+  flex:1;font-size:11px;color:var(--ink-3);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap
+}
+.railsel .mk{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3);white-space:nowrap}
+.bars{display:flex;gap:2px;margin-top:5px}
+.bars i{height:4px;border-radius:2px;display:block}
+.blk{
+  display:flex;align-items:center;gap:8px;width:100%;border:0;background:transparent;
+  border-radius:5px;padding:4px 8px 4px 26px;text-align:left;cursor:pointer;color:inherit
+}
+.blk:hover{background:var(--sunk)}
+.blk i{width:7px;height:7px;border-radius:2px;flex:none}
+.blk .bn{flex:1;font-size:11.5px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.blk .bc{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3)}
+.railfoot{border-top:1px solid var(--rule-2);padding:9px 13px;display:flex;flex-direction:column;gap:4px}
+.railfoot div{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3)}
+.railfoot .bad{color:var(--warn)}
+
+.balance{
+  display:none;align-items:stretch;padding:0 12px;background:var(--card);
+  border-bottom:1px solid var(--rule);flex:none;height:50px;overflow-x:auto
+}
+.balance .lbl{
+  display:flex;align-items:center;padding-right:12px;font-size:10.5px;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--ink-3);font-weight:600;white-space:nowrap
+}
+.seg{
+  border:0;border-radius:6px;padding:6px 11px;margin:6px 2px;text-align:left;
+  background:transparent;cursor:pointer;color:inherit;white-space:nowrap
+}
+.seg:hover{background:var(--sunk)}
+.seg.on{background:var(--sunk)}
+.seg .s1{display:flex;align-items:baseline;gap:6px}
+.seg .sn{font-weight:700;font-size:12.5px}
+.seg.on .sn{color:var(--accent)}
+.seg .sm{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3)}
+
+body[data-layout="rail"] .panes{grid-template-columns:232px minmax(360px,1fr) minmax(320px,1fr)}
+body[data-layout="rail"] .rail{display:flex}
+body[data-layout="bar"]  .rail{display:none}
+body[data-layout="bar"]  .balance{display:flex}
+.card.flash{box-shadow:0 0 0 2px var(--accent)}
+
 @media (max-width:900px){
+  body[data-layout="rail"] .panes,
   .panes{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
+  body[data-layout="rail"] .rail{display:none}
+  .balance{display:flex}
   .left{border-right:0;border-bottom:1px solid var(--rule)}
 }
 </style>
@@ -186,6 +303,23 @@ input[type=text]:hover,textarea:hover,select:hover{border-color:var(--ink-3)}
   <div class="field"><label for="date">Date</label><input type="text" id="date" value="8 May 2026"></div>
   <div class="field"><label for="target">Target</label><input type="number" id="target" value="40" min="0" max="99"></div>
   <div class="spacer"></div>
+  <div class="field">
+    <label for="theme">Theme</label>
+    <select id="theme">
+      <option value="qdhs">QDHS</option>
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+      <option value="auto">Match system</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="layout">Outline</label>
+    <select id="layout">
+      <option value="auto">Auto</option>
+      <option value="rail">Rail</option>
+      <option value="bar">Bar</option>
+    </select>
+  </div>
   <div class="tot" id="tot">0 questions · 0 marks</div>
   <button class="btn" id="save">Save</button>
   <button class="btn" id="load">Open</button>
@@ -193,7 +327,17 @@ input[type=text]:hover,textarea:hover,select:hover{border-color:var(--ink-3)}
   <button class="btn primary" id="compile">Compile</button>
 </div>
 
+<div class="balance" id="balance"></div>
+
 <div class="panes">
+  <aside class="rail" id="rail">
+    <div class="railhead">
+      <span class="lbl">Outline</span>
+      <button class="icon" id="railall" title="Expand or collapse every text">Collapse all</button>
+    </div>
+    <div class="railbody" id="railbody"></div>
+    <div class="railfoot" id="railfoot"></div>
+  </aside>
   <div class="left">
     <div id="list"></div>
     <div class="addwrap"><div class="palette" id="palette"></div></div>
@@ -249,10 +393,24 @@ function fresh(){
   ]};
 }
 
+
+/* Text sections are lettered in order, so adding one picks up where the last
+   left off instead of always offering A. */
+function nextTextLabel(){
+  if (typeof paper === "undefined" || !paper) return "A";
+  const used = new Set(paper.items.filter(x => x.t === "text")
+                                  .map(x => (x.label || "").toUpperCase()));
+  for (let i = 0; i < 26; i++){
+    const c = String.fromCharCode(65 + i);
+    if (!used.has(c)) return c;
+  }
+  return "A";
+}
+
 function blank(t){
   const b = {id:uid(), t};
   const T = TYPES[t];
-  if (t === "text")        Object.assign(b, {label:"A", title:""});
+  if (t === "text")        Object.assign(b, {label:nextTextLabel(), title:""});
   else if (t === "mcq")    Object.assign(b, {stem:"", opts:["","","",""], answer:0});
   else if (t === "true")   Object.assign(b, {marks:4, opts:["","","","","","","",""], picked:[]});
   else if (t === "shorttwo") Object.assign(b, {stem:"", a:"", b:""});
@@ -278,7 +436,7 @@ function numbering(){
     else if (it.t === "shorttwo")   { from = ++q; to = from; m = 2; }
     else if (T.match)               { from = q + 1; q += it.items.length; to = q; m = it.items.length; }
     else if (it.t === "source")     { from = q + 1; q += it.rows.length;  to = q; m = it.rows.length; }
-    else if (it.t === "gapfill")    { from = q + 1; q += it.gaps.length;  to = q; m = it.gaps.length; }
+    else if (it.t === "gapfill")    { const g = gapCount(it.stimulus); from = q + 1; q += g; to = q; m = g; }
     else                            { from = ++q; to = from; m = 1; }
     marks += m;
     return {from, to, m};
@@ -292,6 +450,16 @@ function problems(it){
     if (it.opts.length !== want)
       out.push(`${paper.kind === "listening" ? "Listening" : "Reading"} multiple choice takes ${want} options, not ${it.opts.length}.`);
     if (!it.opts.some(o => o.trim())) out.push("No options written yet.");
+  }
+  if (it.t === "gapfill"){
+    const g = gapCount(it.stimulus);
+    if (!g) out.push("No gaps — put [] in the stimulus where students write.");
+    else {
+      const blank = it.gaps.slice(0, g).filter(x => !String(x.answer || "").trim()).length;
+      if (blank) out.push(`${blank} of ${g} gaps have no answer yet.`);
+      const over = it.gaps.slice(0, g).filter(x => String(x.answer || "").trim().split(/\s+/).length > 3).length;
+      if (over) out.push(`${over} answer(s) run past the three-word limit the rubric states.`);
+    }
   }
   if (it.t === "true" && it.opts.length !== 2 * (+it.marks || 0))
     out.push(`${it.marks} marks needs ${2 * it.marks} options — there are ${it.opts.length}.`);
@@ -464,13 +632,9 @@ function buildTex(){
       const base = n[i].from;
       if (it.caption.trim()) L.push(`\\ibstimcaption{${tex(it.caption)}}`);
       L.push("\\begin{ibstimulus}");
-      L.push("\\begin{ibstimlist}");
-      it.stimulus.split(/\n+/).filter(x => x.trim()).forEach(line => {
-        let k = -1;
-        L.push("  \\item " + tex(line).replace(/\[\s*\]/g, () => { k++; return "\\ibgapnext"; }));
-      });
-      L.push("\\end{ibstimlist}");
+      stimulusTex(it.stimulus).forEach(x => L.push(x));
       L.push("\\end{ibstimulus}");
+      syncGaps(it);
       it.gaps.forEach(g => L.push(`\\ibgapq[${tex(g.answer)}]`));
     } else if (it.t === "shorttwo"){
       L.push(`\\ibshortqtwo[${tex(it.a)}][${tex(it.b)}]{${tex(it.stem)}}`);
@@ -509,6 +673,7 @@ function render(){
     const T = TYPES[it.t], num = n[i];
     if (num.from){ totQ = num.to; totM += num.m; }
     const card = el("div", "card" + (it.t === "text" ? " section" : it.t === "brk" ? " brk" : ""));
+    card.dataset.i = i;
 
     const head = el("div", "chead");
     head.append(el("div", "qn", num.from ? (num.from === num.to ? num.from + "." : `${num.from}–${num.to}`) : ""));
@@ -541,7 +706,288 @@ function render(){
   const t = $("#tot"), target = +paper.target || 0;
   t.textContent = `${totQ} question${totQ === 1 ? "" : "s"} · ${totM} of ${target} marks`;
   t.className = "tot " + (totM === target && target ? "ok" : totM > target && target ? "warn" : "");
+  renderOutline();
   save();
+}
+
+
+
+/* ═══ listening gap-fill ═════════════════════════════════════════════════
+   The stimulus is the single source of truth: every [] in it is one gap.
+   The answer rows are derived from it, so the two can never disagree — which
+   is what \ibeb@gapvalidate in the package warns about. */
+
+
+/* The interior of a stimulus is a different document every session. Across the
+   corpus it appears as notes, a slide, guidelines, an e-flyer and a profile, so
+   the editor offers those as starting points rather than a blank box. Each
+   carries five gaps, which is what every observed stimulus has. */
+const STIMULUS_TEMPLATES = {
+  "Notes": "# Notes on the discussion\n- The term is not the same as [] in this field.\n- Structure: [] then comments, then elaboration.\n- Described as positive or negative based on the [].\n- Honest remarks of this kind were received [].\n- People conform in order to avoid [].",
+  "Presentation slide": "# Topic and background\n- The word is linked to a []\n- Evidence of early practice:\n-- Surprising fact: they used []\n-- Infection was avoided by []\n# Practices that persist\n- Washing before []\n- Using [] to show commitment",
+  "Guidelines": "# Approving requests\nThe following factors are taken into account:\n- your [] and\n- your ability to work to deadlines.\n# Days\n- Maximum two days a week, unless approved by the [].\n- Not permitted on days when [] takes place.\n# Location\n- You must be within two hours of the office.\n- Not permitted abroad for [] reasons.\n- Exceptions need [] approval.",
+  "E-flyer": "# Programme mission\nConnecting you with locals through [] activities and events.\n# How does it work?\nYou will be paired with a volunteer local family.\n- Frequency of meet-up: []\n- Requirements:\n-- must be interactive\n-- [] is not permitted\n- Reward after six months: **FREE** []\n# Highlight\nMonthly activities for everyone, for example [] and more.",
+  "Profile": "# Profile: name here\n# Participation record:\n- 2024: champion\n- 2025 (ongoing): just completed her []\n# About\n- Considered [] by her parents\n- First became known after []\n- Short-term goal: to []\n- Long-term goal: to []",
+};
+
+const GAPRE = /\[\s*\]/g;
+const gapCount = stim => (String(stim || "").match(GAPRE) || []).length;
+
+
+/* Insert editor syntax at the cursor, so the toolbar behaves like a formatting
+   bar without any of a rich-text editor's machinery. */
+function insertToken(it, tok, how){
+  const i = paper.items.indexOf(it);
+  const ta = document.querySelector(`[data-i="${i}"] textarea[data-stim]`);
+  if (!ta) return;
+  const v = ta.value;
+  const a = ta.selectionStart ?? v.length, b = ta.selectionEnd ?? a;
+  let caret;
+  if (how === "line"){
+    const ls = v.lastIndexOf("\n", a - 1) + 1;
+    ta.value = v.slice(0, ls) + tok + v.slice(ls);
+    caret = a + tok.length;
+  } else if (how === "wrap"){
+    const sel = v.slice(a, b) || "text";
+    ta.value = v.slice(0, a) + tok + sel + tok + v.slice(b);
+    caret = a + tok.length + sel.length + tok.length;
+  } else {
+    ta.value = v.slice(0, a) + tok + v.slice(b);
+    caret = a + tok.length;
+  }
+  it.stimulus = ta.value; syncGaps(it); render();
+  const again = document.querySelector(`[data-i="${i}"] textarea[data-stim]`);
+  if (again){ again.focus(); again.setSelectionRange(caret, caret); }
+}
+
+function syncGaps(it){
+  const want = gapCount(it.stimulus);
+  while (it.gaps.length < want) it.gaps.push({answer:""});
+  if (it.gaps.length > want) it.gaps.length = want;
+  return want;
+}
+
+/* One stimulus line -> LaTeX. The syntax covers what the corpus actually
+   prints: headings, two levels of bullet, and plain running lines.
+     # text   bold heading        -  text   bullet
+     -- text  sub-bullet          text      plain line
+   [] is a gap and numbers itself. */
+function stimulusTex(stimulus){
+  const out = [];
+  let mode = null;                       // null | "list" | "sub"
+  const shut = () => {
+    if (mode === "list") out.push("\\end{ibstimlist}");
+    if (mode === "sub")  out.push("\\end{ibstimsub}");
+    mode = null;
+  };
+  const open = m => {
+    if (mode === m) return;
+    shut();
+    out.push(m === "sub" ? "\\begin{ibstimsub}" : "\\begin{ibstimlist}");
+    mode = m;
+  };
+  String(stimulus || "").split(/\n/).forEach(raw => {
+    const line = raw.trim();
+    if (!line){ shut(); return; }
+    const body = t => tex(t).replace(/\*\*([^*]+)\*\*/g, (m, x) => `\\textbf{${x}}`)
+                            .replace(GAPRE, "\\ibgapnext");
+    if (line.startsWith("#")){
+      shut();
+      out.push(`\\textbf{${body(line.replace(/^#+\s*/, ""))}}\\par\\vspace{1.5mm}`);
+    } else if (line.startsWith("--")){
+      open("sub");
+      out.push("  \\item " + body(line.replace(/^--\s*/, "")));
+    } else if (line.startsWith("-")){
+      open("list");
+      out.push("  \\item " + body(line.replace(/^-\s*/, "")));
+    } else {
+      shut();
+      out.push(`\\ibstimline{${body(line)}}`);
+    }
+  });
+  shut();
+  return out;
+}
+
+
+/* ═══ theme ══════════════════════════════════════════════════════════════ */
+
+const THEME_KEY = "ibeb.theme";
+function applyTheme(v){
+  const root = document.documentElement;
+  if (v === "auto") root.removeAttribute("data-theme");
+  else root.setAttribute("data-theme", v);
+  try{ localStorage.setItem(THEME_KEY, v); }catch(e){}
+}
+function initTheme(){
+  let v = "qdhs";
+  try{ v = localStorage.getItem(THEME_KEY) || "qdhs"; }catch(e){}
+  $("#theme").value = v; applyTheme(v);
+}
+
+/* ═══ outline — which texts hold which question types ════════════════════ */
+
+const LAYOUT_KEY = "ibeb.layout", OPEN_KEY = "ibeb.open";
+const RAIL_MIN = 1180;               // below this there is no room for a rail
+let openTexts = null, activeText = 0;
+
+function readOpen(){
+  if (openTexts) return openTexts;
+  try{ openTexts = new Set(JSON.parse(localStorage.getItem(OPEN_KEY) || "[]")); }
+  catch(e){ openTexts = new Set(); }
+  return openTexts;
+}
+const writeOpen = () => {
+  try{ localStorage.setItem(OPEN_KEY, JSON.stringify([...readOpen()])); }catch(e){}
+};
+
+/* Walk the paper once and group it the way the IB does: a text section, then
+   runs of like question types beneath it. Mirrors tools/breakdown.py. */
+function outline(){
+  const n = numbering(), secs = [];
+  let cur = null;
+  paper.items.forEach((it, i) => {
+    if (it.t === "text"){
+      cur = { i, label: it.label || String.fromCharCode(65 + secs.length),
+              title: it.title || "", q: 0, marks: 0, blocks: [], bad: 0 };
+      secs.push(cur);
+      return;
+    }
+    if (it.t === "brk" || !cur) return;
+    const num = n[i];
+    if (!num.from) return;
+    cur.q += (num.to - num.from + 1);
+    cur.marks += num.m;
+    if (problems(it).length) cur.bad++;
+    const name = TYPES[it.t].name;
+    const last = cur.blocks[cur.blocks.length - 1];
+    if (last && last.name === name){ last.n++; last.m += num.m; last.bad += problems(it).length ? 1 : 0; }
+    else cur.blocks.push({ name, n: 1, m: num.m, i, bad: problems(it).length ? 1 : 0 });
+  });
+  const total = secs.reduce((a, b) => a + b.marks, 0) || 1;
+  secs.forEach(sc => { sc.pct = Math.round(100 * sc.marks / total) + "%"; });
+  return secs;
+}
+
+const HUE = k => `var(--h${(k % 5) + 1})`;
+
+function jumpTo(idx, setActive){
+  if (setActive != null) activeText = setActive;
+  const card = document.querySelector(`[data-i="${idx}"]`);
+  if (card){
+    card.scrollIntoView({ behavior: "smooth", block: "start" });
+    card.classList.add("flash");
+    setTimeout(() => card.classList.remove("flash"), 900);
+  }
+  renderOutline();
+}
+
+function renderOutline(){
+  const secs = outline(), open = readOpen();
+
+  /* rail */
+  const body = $("#railbody"); body.innerHTML = "";
+  secs.forEach((sc, k) => {
+    const isOpen = open.has(sc.label), on = k === activeText;
+    const row = el("div", "railrow" + (on ? " on" : "") + (isOpen ? " open" : ""));
+
+    const chev = el("button", "chev");
+    chev.title = isOpen ? "Collapse" : "Expand";
+    chev.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
+    /* Expanding is independent of selecting: opening one text never closes
+       another, and choosing a text never collapses the one you were reading. */
+    chev.onclick = e => { e.stopPropagation();
+      isOpen ? open.delete(sc.label) : open.add(sc.label); writeOpen(); renderOutline(); };
+    row.append(chev);
+
+    const sel = el("button", "railsel");
+    const t1 = el("div", "t1");
+    t1.append(el("span", "nm", (paper.kind === "listening" ? "Audio " : "Text ") + sc.label));
+    t1.append(el("span", "ti", sc.title));
+    t1.append(el("span", "mk", `${sc.marks} · ${sc.pct}`));
+    sel.append(t1);
+    const bars = el("div", "bars");
+    sc.blocks.forEach((b, j) => {
+      const bar = el("i"); bar.style.flex = b.m || 1;
+      bar.style.background = HUE(j); bar.style.opacity = on ? 1 : .42;
+      bar.title = `${b.name} × ${b.n}`;
+      bars.append(bar);
+    });
+    sel.append(bars);
+    sel.onclick = () => jumpTo(sc.i, k);
+    row.append(sel);
+    body.append(row);
+
+    if (isOpen) sc.blocks.forEach((b, j) => {
+      const blk = el("button", "blk");
+      const dot = el("i"); dot.style.background = HUE(j); blk.append(dot);
+      blk.append(el("span", "bn", b.name));
+      blk.append(el("span", "bc", "×" + b.n));
+      if (b.bad){
+        const w = el("span"); w.style.color = "var(--warn)"; w.style.lineHeight = "0";
+        w.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 9v4"/><path d="M10.4 3.9 2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.6 3.9a2 2 0 0 0-3.2 0Z"/><path d="M12 17h.01"/></svg>';
+        blk.append(w);
+      }
+      blk.onclick = () => jumpTo(b.i, k);
+      body.append(blk);
+    });
+  });
+
+  if (!secs.length) body.append(el("div", "empty", "No text sections yet."));
+
+  const allOpen = secs.length && secs.every(sc => open.has(sc.label));
+  $("#railall").textContent = allOpen ? "Collapse all" : "Expand all";
+  $("#railall").onclick = () => {
+    secs.forEach(sc => allOpen ? open.delete(sc.label) : open.add(sc.label));
+    writeOpen(); renderOutline();
+  };
+
+  const used = new Set();
+  paper.items.forEach(it => { if (TYPES[it.t] && TYPES[it.t].group !== "structure") used.add(it.t); });
+  const avail = Object.keys(TYPES).filter(t => {
+    const g = TYPES[t].group;
+    return g !== "structure" && (g === "both" || g === paper.kind);
+  }).length;
+  const bad = secs.reduce((a, b) => a + b.bad, 0);
+  $("#railfoot").innerHTML =
+    `<div><span>Texts</span><span>${secs.length}</span></div>` +
+    `<div><span>Types used</span><span>${used.size} of ${avail}</span></div>` +
+    `<div class="${bad ? "bad" : ""}"><span>Issues</span><span>${bad}</span></div>`;
+
+  /* balance bar — the same data, for when there is no room for a rail */
+  const bar = $("#balance"); bar.innerHTML = "";
+  if (secs.length){
+    bar.append(el("span", "lbl", "Balance"));
+    secs.forEach((sc, k) => {
+      const seg = el("button", "seg" + (k === activeText ? " on" : ""));
+      const s1 = el("div", "s1");
+      s1.append(el("span", "sn", sc.label));
+      s1.append(el("span", "sm", `${sc.marks} · ${sc.pct}`));
+      seg.append(s1);
+      const bars = el("div", "bars");
+      sc.blocks.forEach((b, j) => {
+        const i2 = el("i"); i2.style.width = Math.max(8, b.n * 11) + "px";
+        i2.style.background = HUE(j); i2.style.opacity = k === activeText ? 1 : .42;
+        i2.title = `${b.name} × ${b.n}`;
+        bars.append(i2);
+      });
+      seg.append(bars);
+      seg.onclick = () => jumpTo(sc.i, k);
+      bar.append(seg);
+    });
+  }
+}
+
+/* ═══ layout — rail when there is room, bar when there is not ════════════ */
+
+function layoutPref(){
+  try{ return localStorage.getItem(LAYOUT_KEY) || "auto"; }catch(e){ return "auto"; }
+}
+function applyLayout(){
+  const pref = $("#layout").value;
+  const eff = pref === "auto" ? (window.innerWidth >= RAIL_MIN ? "rail" : "bar") : pref;
+  document.body.dataset.layout = eff;
+  try{ localStorage.setItem(LAYOUT_KEY, pref); }catch(e){}
 }
 
 function field(parent, label, value, oninput, multiline){
@@ -730,24 +1176,110 @@ function buildFields(body, it, num){
 
   if (it.t === "gapfill"){
     field(body, "Caption above the box", it.caption, v => { it.caption = v; save(); });
-    field(body, "Stimulus — one bullet per line, [] marks a gap", it.stimulus,
-          v => { it.stimulus = v; save(); }, true);
-    body.append(el("div", "hint", "Gap numbers are filled in automatically, in order."));
-    it.gaps.forEach((g, k) => {
-      const r = el("div", "opt");
-      r.append(el("span", "lt", (num.from + k) + "."));
-      const inp = el("input"); inp.type = "text"; inp.value = g.answer;
-      inp.placeholder = "Answer for this gap";
-      inp.oninput = e => { g.answer = e.target.value; save(); };
-      r.append(inp);
-      const x = el("button", "icon del", "✕");
-      x.onclick = () => { it.gaps.splice(k, 1); render(); };
-      r.append(x);
-      body.append(r);
+
+    /* stimulus — the source of truth for how many gaps exist */
+    const wrap = el("div");
+    const lab = el("div");
+    lab.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:4px";
+    const lt = el("label", null, "Stimulus");
+    lt.style.cssText = "font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)";
+    lab.append(lt);
+    const sp = el("div"); sp.style.flex = "1"; lab.append(sp);
+    [["Heading","# ","line"],["Bullet","- ","line"],["Sub-bullet","-- ","line"],
+     ["Bold","**","wrap"],["Gap","[]","point"]].forEach(([name, tok, how]) => {
+      const b = el("button", "btn mini", name);
+      b.title = "Insert at the cursor";
+      b.onclick = () => insertToken(it, tok, how);
+      lab.append(b);
     });
-    const add = el("button", "btn mini", "Add gap");
-    add.onclick = () => { it.gaps.push({answer:""}); render(); };
-    body.append(add);
+    wrap.append(lab);
+
+    const ta = el("textarea");
+    ta.value = it.stimulus;
+    ta.rows = 7;
+    ta.dataset.stim = "1";
+    ta.placeholder = "# Gamer profile: Tianna Williams\n# Participation record:\n- 2024: champion\n- 2025 (ongoing): just completed her []\n# About Tianna:\n- First became famous after []";
+    ta.oninput = e => { it.stimulus = e.target.value; syncGaps(it); render(); };
+    wrap.append(ta);
+    body.append(wrap);
+
+    const tplrow = el("div", "row");
+    tplrow.append(el("label", null, "Start from"));
+    const tsel = el("select");
+    const none = el("option", null, "—"); none.value = ""; tsel.append(none);
+    Object.keys(STIMULUS_TEMPLATES).forEach(k => {
+      const o = el("option", null, k); o.value = k; tsel.append(o);
+    });
+    tsel.onchange = e => {
+      const k = e.target.value;
+      if (!STIMULUS_TEMPLATES[k]) return;
+      if (it.stimulus.trim() && !confirm(`Replace the current stimulus with the ${k} layout?`)){
+        e.target.value = ""; return;
+      }
+      it.stimulus = STIMULUS_TEMPLATES[k];
+      it.gaps = []; syncGaps(it); render();
+    };
+    tplrow.append(tsel);
+    body.append(tplrow);
+
+    const help = document.createElement("details");
+    help.className = "help";
+    const sum = document.createElement("summary");
+    sum.textContent = "How the stimulus box works";
+    help.append(sum);
+    const hb = el("div", "helpbody");
+    hb.innerHTML =
+      "<p><b>The box is a different document every session.</b> Across six past "
+      + "papers it has been notes, a presentation slide, guidelines, an e-flyer and "
+      + "a gamer profile. What never changes: a caption ending in a colon, a framed "
+      + "box, gaps numbered continuously with the questions, and <b>five gaps</b> — "
+      + "every observed stimulus has had exactly five.</p>"
+      + "<p><b>Start from</b> gives you one of those five shapes. They are starting "
+      + "points, not rules — rewrite them freely, or ignore them and type your own.</p>"
+      + "<p><b>Writing it:</b> <code>#</code> begins a bold heading, <code>-</code> a "
+      + "bullet, <code>--</code> a sub-bullet, and a line with no marker is plain prose. "
+      + "<code>**bold**</code> emphasises. A blank line breaks a list. The buttons above "
+      + "type all of that for you at the cursor.</p>"
+      + "<p><b>Gaps:</b> <code>[]</code> marks one. You never type its number — it is "
+      + "worked out from position, both here and in the LaTeX, so the markers in the box "
+      + "and the answer boxes below can never drift apart. Move a gap and everything "
+      + "renumbers.</p>"
+      + "<p><b>If you need something this cannot express</b> — an arrow diagram, a table, "
+      + "roman sub-items — build the paper anyway, then use <b>.tex</b> to download the "
+      + "source and edit that last step by hand. The generator gets you to a correct, "
+      + "correctly measured paper; it is not trying to be the last word on layout.</p>";
+    help.append(hb);
+    body.append(help);
+
+    const nGaps = syncGaps(it);
+
+    /* what the paper will actually show, with the real numbers in place */
+    if (it.stimulus.trim()){
+      const pv = el("div");
+      pv.style.cssText = "background:var(--sunk);border-radius:4px;padding:8px 10px;"
+        + "font-size:12px;line-height:1.6;white-space:pre-wrap;color:var(--ink-2)";
+      let k = 0;
+      pv.textContent = it.stimulus.replace(GAPRE, () => `[ – ${num.from + (k++)} – ]`)
+                                  .replace(/^#+\s*/gm, "").replace(/^--\s*/gm, "   \u25E6 ").replace(/^-\s*/gm, " \u2022 ");
+      body.append(pv);
+    }
+
+    if (!nGaps){
+      body.append(el("div", "flag", "No gaps yet — put [] in the stimulus where students write."));
+    } else {
+      const h = el("div", "hint", `${nGaps} gap${nGaps === 1 ? "" : "s"} · questions ${num.from}–${num.to}`);
+      h.style.marginTop = "2px";
+      body.append(h);
+      it.gaps.forEach((g, k) => {
+        const r = el("div", "opt");
+        r.append(el("span", "lt", (num.from + k) + "."));
+        const inp = el("input"); inp.type = "text"; inp.value = g.answer;
+        inp.placeholder = "Answer for this gap — three words at most";
+        inp.oninput = e => { g.answer = e.target.value; save(); };
+        r.append(inp);
+        body.append(r);
+      });
+    }
     return;
   }
 
@@ -851,6 +1383,7 @@ function move(i, d){
 }
 function dup(i){
   const c = JSON.parse(JSON.stringify(paper.items[i])); c.id = uid();
+  if (c.t === "text") c.label = nextTextLabel();
   paper.items.splice(i + 1, 0, c); render();
 }
 function del(i){ paper.items.splice(i, 1); render(); }
@@ -945,7 +1478,14 @@ $("#load").onclick = () => $("#file").click();
 $("#file").onchange = e => {
   const f = e.target.files[0]; if (!f) return;
   const rd = new FileReader();
-  rd.onload = () => { try{ paper = migrate(JSON.parse(rd.result)); syncBar(); renderPalette(); render(); }
+  rd.onload = () => { try{ paper = migrate(JSON.parse(rd.result)); $("#theme").onchange = e => applyTheme(e.target.value);
+$("#layout").onchange = applyLayout;
+window.addEventListener("resize", () => { if ($("#layout").value === "auto") applyLayout(); });
+
+initTheme();
+$("#layout").value = layoutPref();
+applyLayout();
+syncBar(); renderPalette(); render(); }
                       catch(err){ alert("That file isn't a saved paper."); } };
   rd.readAsText(f); e.target.value = "";
 };
@@ -960,6 +1500,13 @@ function syncBar(){
   $("#target").value = paper.target;
 }
 
+$("#theme").onchange = e => applyTheme(e.target.value);
+$("#layout").onchange = applyLayout;
+window.addEventListener("resize", () => { if ($("#layout").value === "auto") applyLayout(); });
+
+initTheme();
+$("#layout").value = layoutPref();
+applyLayout();
 syncBar(); renderPalette(); render();
 </script>
 </body>
