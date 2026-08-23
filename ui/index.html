@@ -619,6 +619,14 @@ function problems(it){
   /* The tick table had no rules at all, though it is the type most able to
      produce a broken paper: an unnamed column prints an empty heading and
      writes an empty answer into the markscheme. */
+  if (it.t === "task"){
+    if (!String(it.scenario || "").trim()) out.push("No scenario written yet.");
+    else if (!/write a text in which you/i.test(it.scenario))
+      out.push("Every task in the corpus ends \u201cWrite a text in which you \u2026\u201d "
+             + "followed by three things to do.");
+    if (new Set(it.types || []).size !== 3) out.push("The same text type is offered twice.");
+  }
+
   if (it.t === "source"){
     const unnamed = it.cols.filter(c => !String(c || "").trim()).length;
     if (unnamed)
@@ -934,8 +942,16 @@ function render(){
     list.append(el("div", "empty", "Empty paper. Add a text section, then questions."));
 
   const t = $("#tot"), target = +paper.target || 0;
-  t.textContent = `${totQ} question${totQ === 1 ? "" : "s"} · ${totM} of ${target} marks`;
-  t.className = "tot " + (totM === target && target ? "ok" : totM > target && target ? "warn" : "");
+  if (paper.kind === "paper1"){
+    /* Paper 1 is marked against three criteria, not question by question, so
+       there is no running total to report — only whether there are three tasks. */
+    const tasks = paper.items.filter(x => x.t === "task").length;
+    t.textContent = `${tasks} task${tasks === 1 ? "" : "s"} · 30 marks, criterion-marked`;
+    t.className = "tot " + (tasks === 3 ? "ok" : tasks > 3 ? "warn" : "");
+  } else {
+    t.textContent = `${totQ} question${totQ === 1 ? "" : "s"} · ${totM} of ${target} marks`;
+    t.className = "tot " + (totM === target && target ? "ok" : totM > target && target ? "warn" : "");
+  }
   renderOutline();
   save();
   restore(where);
@@ -1089,6 +1105,18 @@ const writeOpen = () => {
    runs of like question types beneath it. Mirrors tools/breakdown.py. */
 function outline(){
   const n = numbering(), secs = [];
+  /* Paper 1 has no text sections — it is three tasks, so the rail lists those
+     and their text-type options instead of reporting an empty paper. */
+  if (paper.kind === "paper1"){
+    paper.items.filter(x => x.t === "task").forEach((it, k) => {
+      const first = (it.scenario || "").split(/(?<=[.!?])\s/)[0] || "";
+      secs.push({ i: paper.items.indexOf(it), label: String(k + 1),
+                  title: first.slice(0, 46), q: 0, marks: 0, pct: "",
+                  bad: new Set(it.types || []).size !== 3 ? 1 : 0,
+                  blocks: (it.types || []).map(t => ({ name: t, n: 1, m: 1, i: paper.items.indexOf(it), bad: 0 })) });
+    });
+    return secs;
+  }
   let cur = null;
   paper.items.forEach((it, i) => {
     if (it.t === "text"){
@@ -1146,9 +1174,12 @@ function renderOutline(){
 
     const sel = el("button", "railsel");
     const t1 = el("div", "t1");
-    t1.append(el("span", "nm", (paper.kind === "listening" ? "Audio " : "Text ") + sc.label));
+    t1.append(el("span", "nm", paper.kind === "paper1" ? "Task " + sc.label
+                : (paper.kind === "listening" ? "Audio " : "Text ") + sc.label));
     t1.append(el("span", "ti", sc.title));
-    t1.append(el("span", "mk", `${sc.marks} · ${sc.pct}`));
+    t1.append(el("span", "mk", paper.kind === "paper1"
+      ? `${(paper.items[sc.i].types || []).length} types`
+      : `${sc.marks} · ${sc.pct}`));
     sel.append(t1);
     const bars = el("div", "bars");
     sc.blocks.forEach((b, j) => {
@@ -1177,7 +1208,8 @@ function renderOutline(){
     });
   });
 
-  if (!secs.length) body.append(el("div", "empty", "No text sections yet."));
+  if (!secs.length) body.append(el("div", "empty",
+    paper.kind === "paper1" ? "No tasks yet." : "No text sections yet."));
 
   const allOpen = secs.length && secs.every(sc => open.has(sc.label));
   $("#railall").textContent = allOpen ? "Collapse all" : "Expand all";
@@ -1193,8 +1225,11 @@ function renderOutline(){
     return g !== "structure" && (g === "both" || g === paper.kind);
   }).length;
   const bad = secs.reduce((a, b) => a + b.bad, 0);
-  $("#railfoot").innerHTML =
-    `<div><span>Texts</span><span>${secs.length}</span></div>` +
+  $("#railfoot").innerHTML = paper.kind === "paper1"
+    ? `<div><span>Tasks</span><span>${secs.length} of 3</span></div>` +
+      `<div><span>Text types used</span><span>${new Set(paper.items.filter(x=>x.t==="task").flatMap(x=>x.types||[])).size}</span></div>` +
+      `<div class="${bad ? "bad" : ""}"><span>Issues</span><span>${bad}</span></div>`
+    : `<div><span>Texts</span><span>${secs.length}</span></div>` +
     `<div><span>Types used</span><span>${used.size} of ${avail}</span></div>` +
     `<div class="${bad ? "bad" : ""}"><span>Issues</span><span>${bad}</span></div>`;
 
