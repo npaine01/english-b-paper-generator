@@ -362,6 +362,28 @@ body[data-layout="bar"]  .balance{display:flex}
 
 /* ═══ model ═══════════════════════════════════════════════════════════════ */
 
+
+/* The six matching question types are one assembly on the page — a left column,
+   a square, a rule, a lettered option list — differing only in their rubric and
+   in what the left column holds. So they are one type here with a kind, rather
+   than six near-identical entries in the list. `seen` is how often each turned
+   up in twelve reading papers, which is worth knowing before you pick one. */
+const MATCH_KINDS = {
+  headings:  {name:"Headings to paragraphs", rubric:"headings",  gap:true,
+              left:"a numbered gap marker",  seen:"7 of 12 papers"},
+  vocab:     {name:"Vocabulary",             rubric:"vocab",     gap:false,
+              left:"a word, with its line number", seen:"6 of 12 papers"},
+  gapsummary:{name:"Words into a summary",   rubric:"gapsummary",gap:true,
+              left:"a numbered gap marker",  seen:"7 of 12 papers"},
+  halves:    {name:"Sentence halves",        rubric:"halves",    gap:false,
+              left:"the opening of a sentence", seen:"6 of 12 papers"},
+  matchq:    {name:"Questions to gaps",      rubric:"matchq",    gap:true,
+              left:"a numbered gap marker",  seen:"never observed"},
+  people:    {name:"Statements to people",   rubric:"people",    gap:false,
+              left:"a person's name",        seen:"never observed"},
+};
+const mkind = it => MATCH_KINDS[it.kind] || MATCH_KINDS.headings;
+
 const TYPES = {
   text:      {name:"Text section",              group:"structure"},
   brk:       {name:"Page break",                group:"structure"},
@@ -372,12 +394,7 @@ const TYPES = {
   findword:  {name:"Find the word",             group:"reading",rubric:"findword"},
   complete:  {name:"Complete the sentence",     group:"reading",rubric:"complete"},
   refer:     {name:"Identify referents",        group:"reading",rubric:"refer"},
-  headings:  {name:"Match headings",            group:"reading",rubric:"headings", match:"gap"},
-  matchq:    {name:"Match questions to gaps",   group:"reading",rubric:"matchq",   match:"gap"},
-  gapsummary:{name:"Gap-fill from a word list", group:"reading",rubric:"gapsummary",match:"gap"},
-  vocab:     {name:"Match vocabulary",          group:"reading",rubric:"vocab",    match:"item"},
-  people:    {name:"Match statements to people",group:"reading",rubric:"people",   match:"item"},
-  halves:    {name:"Match sentence halves",     group:"reading",rubric:"halves",   match:"item"},
+  match:     {name:"Matching",                  group:"reading",rubric:"match",    match:true},
   source:    {name:"Match to sources",          group:"listening",rubric:"source"},
   gapfill:   {name:"Gap-fill, students write",  group:"listening",rubric:"gapfill"},
 };
@@ -461,7 +478,7 @@ function blank(t){
   else if (t === "true")   Object.assign(b, {marks:4, opts:["","","","","","","",""], picked:[]});
   else if (t === "source") Object.assign(b, {header:"Whose opinion?", cols:["","","Both"], rows:[{text:"",answer:0}]});
   else if (t === "gapfill")Object.assign(b, {stimulus:"", caption:"", gaps:[]});
-  else if (T.match)        Object.assign(b, {ref:"", items:[{text:"",line:"",answer:0},{text:"",line:"",answer:1}],
+  else if (T.match)        Object.assign(b, {kind:"headings", ref:"", items:[{text:"",line:"",answer:0},{text:"",line:"",answer:1}],
                                              opts:["","","",""], summary:""});
   else if (t === "short")  Object.assign(b, {stem:"", answer:"", ref:"", two:false, a:"", b:""});
   else if (t === "refer")  Object.assign(b, {stem:"", answer:"", ref:"", line:""});
@@ -513,7 +530,7 @@ function problems(it){
     out.push(`Tick exactly ${it.marks} correct statements — ${it.picked.length} ticked.`);
   if (T.match && it.opts.length !== 2 * it.items.length)
     out.push(`${it.items.length} items needs ${2 * it.items.length} options — there are ${it.opts.length}.`);
-  if (it.t === "vocab"){
+  if (it.t === "match" && it.kind === "vocab"){
     const missing = it.items.filter(m => !String(m.line == null ? "" : m.line).trim()).length;
     if (missing) out.push(`${missing} ${missing === 1 ? "word has" : "words have"} no line number — the IB always prints one.`);
   }
@@ -660,10 +677,12 @@ function buildTex(){
     // a rubric is emitted whenever the run of like questions changes
     const key = T.rubric === "findword" ? "findword|" + it.ref
               : T.rubric === "complete" ? "complete|" + it.ref
+              : T.rubric === "match"    ? "match|" + it.kind   // each kind its own rubric
               : T.rubric;
     if (T.rubric && key !== lastRubric){
       if (T.rubric === "findword")      L.push(`\\ibrubricfindword{${refTex(it.ref)}}`);
       else if (T.rubric === "complete") L.push(`\\ibrubriccomplete{${refTex(it.ref)}}`);
+      else if (T.rubric === "match")    L.push(RUBRIC[mkind(it).rubric]);
       else                              L.push(RUBRIC[T.rubric]);
       lastRubric = key;
     }
@@ -678,7 +697,7 @@ function buildTex(){
       it.opts.forEach(o => L.push(`  \\opt{${tex(o)}}`));
       L.push("\\end{ibtrue}");
     } else if (T.match){
-      if (it.t === "gapsummary" && it.summary.trim()){
+      if (mkind(it).gap && it.kind === "gapsummary" && it.summary.trim()){
         const base = n[i].from;
         let k = -1;
         const body = tex(it.summary).replace(/\[\s*\]/g, () => { k++; return `\\ibgap{${base + k}}`; });
@@ -686,9 +705,9 @@ function buildTex(){
       }
       L.push("\\begin{ibmatch}");
       it.items.forEach(m => {
-        if (T.match === "gap"){ L.push(`  \\mgap[${LETTERS[m.answer] || ""}]`); return; }
-        const ln = it.t === "vocab" ? lineRef(m.line) : "";
-        const raw = it.t === "halves" ? ellipsize(m.text, false) : m.text;
+        if (mkind(it).gap){ L.push(`  \\mgap[${LETTERS[m.answer] || ""}]`); return; }
+        const ln = it.kind === "vocab" ? lineRef(m.line) : "";
+        const raw = it.kind === "halves" ? ellipsize(m.text, false) : m.text;
         const label = ln ? `${tex(raw)} ${ln}` : tex(raw);
         L.push(`  \\mitem[${LETTERS[m.answer] || ""}]{${label}}`);
       });
@@ -1239,34 +1258,58 @@ function buildFields(body, it, num){
 
   if (T.match){
     const menus = [];
+
+    /* which of the six this is — the assembly is identical, so it is a choice
+       inside the card rather than six entries in the list */
+    const kr = el("div", "row");
+    kr.append(el("label", null, "Matching"));
+    const ks = el("select");
+    Object.entries(MATCH_KINDS).forEach(([k, K]) => {
+      const o = el("option", null, K.name + "  ·  " + K.seen);
+      o.value = k; if ((it.kind || "headings") === k) o.selected = true;
+      ks.append(o);
+    });
+    ks.style.maxWidth = "260px";
+    ks.onchange = e => {
+      const was = mkind(it).gap, now = MATCH_KINDS[e.target.value].gap;
+      /* the gap kinds have no editable left column, so switching to one hides
+         any wording written there — keep it rather than dropping it */
+      if (was && !now) it.items.forEach(m => { if (!m.text) m.text = ""; });
+      it.kind = e.target.value;
+      render();
+    };
+    kr.append(ks);
+    body.append(kr);
+    body.append(el("div", "hint", "Left column holds " + mkind(it).left + "."));
+
     const relabel = () => menus.forEach(sel => {
       [...sel.options].forEach((o, j) => {
         o.textContent = LETTERS[j] + (it.opts[j] ? " \u00b7 " + it.opts[j].slice(0, 18) : "");
       });
     });
-    if (it.t === "gapsummary"){
+    if (it.kind === "gapsummary"){
       field(body, "Summary paragraph — write [] where each gap goes", it.summary,
             v => { it.summary = v; save(); }, true);
     }
-    body.append(el("div", "hint", T.match === "gap"
+    body.append(el("div", "hint", mkind(it).gap
       ? `Each item prints as a numbered gap marker. Put the same markers in your text booklet.`
       : "Left column: the word, name or sentence opening students match."));
     it.items.forEach((m, k) => {
       const r = el("div", "opt");
       r.append(el("span", "lt", (num.from + k) + "."));
-      if (T.match === "gap"){
+      if (mkind(it).gap){
         r.append(Object.assign(el("span", "hint"), {textContent:`[ – ${num.from + k} – ]`,
                  style:"flex:1;font-family:Arial;font-weight:700"}));
       } else {
         const inp = el("input"); inp.type = "text"; inp.value = m.text;
-        inp.placeholder = it.t === "vocab" ? "Word or phrase"
-                        : it.t === "halves" ? "Opening of the sentence" : "Item text";
+        inp.placeholder = it.kind === "vocab" ? "Word or phrase"
+                        : it.kind === "halves" ? "Opening of the sentence" : "Item text";
         inp.oninput = e => { m.text = e.target.value;
-                             it.t === "halves" ? render() : save(); };
+                             it.kind === "halves" ? render() : save(); };
         r.append(inp);
-        if (it.t === "halves" && ellipsisAdded(m.text, false))
+        if (it.kind === "halves" && ellipsisAdded(m.text, false))
           r.append(el("span", "hint", "+ …"));
-        if (it.t === "vocab"){
+        if (it.t === "match" && it.kind === "vocab"){
           const ln = el("input"); ln.type = "number"; ln.min = 1;
           ln.value = m.line == null ? "" : m.line;
           ln.placeholder = "line";
@@ -1572,6 +1615,7 @@ function renderPalette(){
       const hint = {mcq: MCQ_OPTS(paper.kind) + " options",
                     true: "n marks, 2n options",
                     short: "one answer, or two",
+                    match: "six kinds, one layout",
                     text: "starts a new page"}[k];
       if (hint) b.append(el("small", null, hint));
       b.onclick = () => { paper.items.push(blank(k)); render();
@@ -1602,6 +1646,9 @@ function load(){
 // older papers kept the line reference inside the word itself
 function migrate(p){
   (p.items || []).forEach(it => {
+    if (MATCH_KINDS[it.t]){            // was six separate types until the kind
+      it.kind = it.t; it.t = "match";
+    }
     if (it.t === "shorttwo"){          // was its own type until the toggle
       it.t = "short"; it.two = true;
       it.a = it.a || ""; it.b = it.b || ""; it.answer = it.answer || "";
