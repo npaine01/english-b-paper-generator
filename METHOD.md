@@ -184,3 +184,12 @@ questions, no hyphenation, ragged-right body, Paper 1 geometry.
   from measurement, and their spacing is therefore unverified.
 - **Paper 1 spacing changed at November 2024.** `\ibpaperonelegacy` restores the
   earlier values. If you are reproducing an older paper, you need it.
+- **The `paragraphs N–M` badge pair may sit ~0.5 mm right of the real one.**
+  Observed while comparing generated output against May 2021. The *internal*
+  spacing of the pair matches to 0.03 mm, so the badge itself is right; the
+  lead-in from the word "paragraphs" is what differs, and the extracted text
+  shows a space before the dash that the real paper does not have. Five
+  different probes gave inconsistent readings and none was trustworthy, so this
+  is an observation, not a measurement. Affects one rubric form. If you pick it
+  up, rasterise both lines and compare inked columns rather than span origins —
+  see §2 on measuring rendered ink.
