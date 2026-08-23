@@ -375,12 +375,15 @@ tectonic -X compile reading-question-booklet.tex
 
 **Font.** Real IB papers are set in Arial 11 pt. The package tries, in order:
 
-| Engine | Font used |
-|---|---|
-| XeLaTeX / LuaLaTeX, Arial installed | Arial — matches the real papers exactly |
-| XeLaTeX / LuaLaTeX, no Arial | TeX Gyre Heros, automatically, with a warning |
-| pdfLaTeX | URW Nimbus Sans, via `helvet` |
-| any, forced | `\usepackage[font=heros]{ibenglishb}` |
+| Engine | Font used | Status |
+|---|---|---|
+| XeLaTeX / LuaLaTeX, Arial installed | Arial — matches the real papers exactly | verified, 82/82 |
+| XeLaTeX / LuaLaTeX, no Arial | TeX Gyre Heros, automatically, with a warning | verified, 82/82 |
+| pdfLaTeX | URW Nimbus Sans, via `helvet` | verified, 82/82 |
+| any, forced | `\usepackage[font=heros]{ibenglishb}` | — |
+
+All three were checked against the same six documents: identical page counts,
+identical line counts, and every measured constant unchanged.
 
 Arial ships with macOS and with Microsoft Office; a bare Linux box usually has
 neither, and gets the fallback.
@@ -407,6 +410,11 @@ same line counts and the same 82 passing checks. Measured side by side:
 
 The `.ans` answer file is byte-identical between engines, so a booklet compiled
 with one and keyed with the other works.
+
+pdfLaTeX behaves the same way — Nimbus Sans is a third Helvetica clone, so the
+vertical grid and page breaks are identical and only auto-sized columns move,
+by up to 2.5 mm. The answer file round-trips correctly through pdfLaTeX too, so
+generated markschemes are unaffected.
 
 Use Arial if you want output indistinguishable from a real paper. Use the
 fallback if you just want a correct exam.
