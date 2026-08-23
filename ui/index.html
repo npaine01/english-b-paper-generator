@@ -307,6 +307,14 @@ body[data-layout="bar"]  .balance{display:flex}
   <div class="field"><label for="target">Target</label><input type="number" id="target" value="40" min="0" max="99"></div>
   <div class="spacer"></div>
   <div class="field">
+    <label for="pagecode">Page code</label>
+    <select id="pagecode">
+      <option value="">None</option>
+      <option value="08EP">08EP (8-side)</option>
+      <option value="12EP">12EP (12-side)</option>
+    </select>
+  </div>
+  <div class="field">
     <label for="instr">Instructions</label>
     <select id="instr">
       <option value="standard">As printed</option>
@@ -730,6 +738,14 @@ function buildTex(){
      nothing for the mark checker to total. */
   L.push(`\\ibsetmaxmarks{${paper.kind === "paper1" ? 0 : marks}}`);
   if (paper.kind === "listening") L.push("\\ibnotesonall");
+  /* The footer code is a print-shop signature marker: the prefix is the number
+     of sides the booklet is printed on (8 or 12, always a multiple of 4) and
+     the suffix is the side number. Paper 1 never carries one — 0 of 18 booklets
+     — and a school paper has no print run, so it defaults to off here. */
+  const code = paper.pagecode == null
+    ? (paper.kind === "paper1" ? "" : "08EP") : paper.pagecode;
+  if (code) L.push(`\\ibsetfootprefix{${code}}`);
+  else      L.push("\\ibsetfootcode{}");
   L.push("");
   L.push("\\begin{document}");
   L.push("");
@@ -1898,9 +1914,12 @@ $("#kind").onchange = e => {
   $("#target").value = paper.target =
     kind === "paper1" ? 30 : kind === "listening" ? 25 : 40;
   $("#target").disabled = kind === "paper1";
+  paper.pagecode = kind === "paper1" ? "" : "08EP";
+  $("#pagecode").value = paper.pagecode;
   renderPalette(); render();
 };
 $("#instr").onchange = e => { paper.instructions = e.target.value; render(); };
+$("#pagecode").onchange = e => { paper.pagecode = e.target.value; render(); };
 $("#session").oninput = e => { paper.session = e.target.value; save(); };
 $("#date").oninput = e => { paper.date = e.target.value; save(); };
 $("#target").oninput = e => { paper.target = +e.target.value; render(); };
@@ -1935,6 +1954,8 @@ function syncBar(){
   $("#date").value = paper.date;
   $("#target").value = paper.target;
   $("#instr").value = paper.instructions || "standard";
+  $("#pagecode").value = paper.pagecode == null
+    ? (paper.kind === "paper1" ? "" : "08EP") : paper.pagecode;
 }
 
 $("#theme").onchange = e => applyTheme(e.target.value);
