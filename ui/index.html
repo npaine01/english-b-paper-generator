@@ -16,6 +16,7 @@
   --ok:#2F6B57; --ok-soft:#E4F0EA;
   --warn:#9A6316; --warn-soft:#FAEEDC;
   --focus:#A3273F;
+  --struct:#5C6B8A;
   --ui:Archivo,system-ui,-apple-system,sans-serif;
   --display:Archivo,system-ui,-apple-system,sans-serif;
   --h1:#A3273F; --h2:#2F6B57; --h3:#6B7BA8; --h4:#8A6FA8; --h5:#8A8F97;
@@ -41,6 +42,9 @@
   --ok:#00205B; --ok-soft:#DAE5EF;
   --warn:#8A5A12; --warn-soft:#F6EBDA;
   --focus:#C8102E;
+  --struct:#00205B;   /* QD Blue. Also --ok, but the two never meet: --ok is a
+                         filled chip on a state, --struct a dashed outline on a
+                         button. Using it here is most of the blue you see. */
   --ui:'Helvetica Neue',Helvetica,Arial,sans-serif;
   --display:'EB Garamond','Adobe Garamond Pro',Garamond,'Times New Roman',serif;
   --h1:#C8102E; --h2:#00205B; --h3:#7189B7; --h4:#003E7E; --h5:#ACC6E2;
@@ -53,6 +57,7 @@
   --ok:#7FC6AA; --ok-soft:#1C2B26;
   --warn:#DFAE72; --warn-soft:#2E2519;
   --focus:#E8899C;
+  --struct:#8FA8DC;
   --h1:#E8899C; --h2:#7FC6AA; --h3:#8FA8DC; --h4:#B79BD8; --h5:#7E838B;
 }
 *{box-sizing:border-box}
@@ -179,10 +184,15 @@ input[type=text]:hover,textarea:hover,select:hover{border-color:var(--ink-3)}
 .pbtn.struct small{color:var(--accent);opacity:.75}
 .pbtn.struct:hover{background:var(--accent);color:#fff}
 .pbtn.struct:hover small{color:#fff;opacity:.85}
-/* dashed and neutral, exactly like the card it makes — not accent-tinted,
-   because a page break is furniture rather than content */
-.pbtn.brk{background:transparent;border:1px dashed var(--rule);
-          color:var(--ink-2);font-weight:500}
+/* Outline only. A page break is structure, so it gets the structure colour —
+   QD Blue under the school theme — but as a dashed border and label rather
+   than a fill, because it inserts nothing a student reads. Deliberately not
+   --ok, which already means "correct answer" and "on target". */
+.pbtn.brk{background:transparent;border:1px dashed var(--struct);
+          color:var(--struct);font-weight:500}
+.pbtn.brk small{color:var(--struct);opacity:.7}
+.pbtn.brk:hover{background:var(--struct);border-color:var(--struct);color:#fff}
+.pbtn.brk:hover small{color:#fff;opacity:.85}
 .pbtn.brk:hover{border-color:var(--ink-3);color:var(--ink);background:var(--sunk)}
 .palrule{
   grid-column:1/-1;display:flex;align-items:center;gap:9px;margin:3px 0 1px;
@@ -377,7 +387,7 @@ body[data-layout="bar"]  .balance{display:flex}
     <select id="recent"><option value="">—</option></select>
   </div>
   <button class="btn" id="newpaper">New</button>
-  <button class="btn" id="clearq">Clear</button>
+  <button class="btn" id="clearq" title="Remove the questions, keep the texts">Clear questions</button>
   <button class="btn" id="save">Save</button>
   <button class="btn" id="load">Open</button>
   <button class="btn" id="dltex">.tex</button>
@@ -2165,16 +2175,36 @@ $("#kind").onchange = e => {
 };
 
 /* Start again, but keep what you had — the paper goes into Recent first. */
-/* Clear keeps the paper — kind, session, date, target, instructions — and
-   removes only the questions. New starts over completely. */
+/* Clear removes the questions and keeps the paper's skeleton: the top-line
+   details and the text sections with their labels and titles. A text section
+   is not a question — it names something in the accompanying text booklet, so
+   clearing questions almost always means rebuilding on the same texts. Page
+   breaks go with the questions, being furniture for a layout that no longer
+   exists. New is the button for starting with nothing. */
 $("#clearq").onclick = () => {
-  const n = paper.items.length;
-  if (!n) return;
-  if (!confirm(`Remove all ${n} card${n === 1 ? "" : "s"}?\n\nThe session, date, `
-             + `paper type and target are kept, and this paper goes into Recent first.`)) return;
+  const keep = paper.items.filter(it => it.t === "text");
+  const going = paper.items.length - keep.length;
+  if (!going){
+    if (!keep.length) return;
+    /* Nothing but text sections left — offer the obvious next step rather than
+       doing nothing and looking broken. */
+    if (!confirm(`There are no questions to clear.\n\nRemove the ${keep.length} text `
+               + `section${keep.length === 1 ? "" : "s"} as well?`)) return;
+    remember();
+    openTexts = null; activeText = 0;
+    paper.items = [];
+    renderRecent(); render();
+    return;
+  }
+  const kept = keep.length
+    ? `\n\nThe ${keep.length} text section${keep.length === 1 ? "" : "s"} `
+      + `(${keep.map(t => t.label).join(", ")}) and everything at the top are kept.`
+    : "\n\nEverything at the top is kept.";
+  if (!confirm(`Remove ${going} question${going === 1 ? "" : "s"}?` + kept
+             + `\n\nThis paper goes into Recent first.`)) return;
   remember();
   openTexts = null; activeText = 0;
-  paper.items = [];
+  paper.items = keep;
   renderRecent(); render();
 };
 
