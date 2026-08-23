@@ -112,10 +112,11 @@ def main(path):
 
     # Corpus rules worth flagging. See the analysis in local/ and METHOD.md.
     if kind == "reading" and not types["true"]:
-        print("  note  no identify-true-statements question. It carries 3–5 marks"
-              "\n        under one number and is how the IB reconciles a variable"
-              "\n        question count with a fixed 40, so papers without one"
-              "\n        tend to struggle to reach the total cleanly.")
+        print("  note  no identify-true-statements question, so every question here"
+              "\n        carries one mark and the paper needs a full 40 of them."
+              "\n        That is a real shape: 4 of 12 reading booklets do exactly"
+              "\n        this. The alternative is a 35-37 question paper with an"
+              "\n        identify-true-statements block worth 3-5 marks.")
     if kind == "listening":
         for title, rows in sections:
             distinct = len({t for _, _, t in rows})
