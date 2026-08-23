@@ -23,6 +23,7 @@ NAMES = {
     "complete": "complete the sentence",
     "refer":    "identify referents",
     "short":    "short answer",
+    "short2":   "short answer, two answers",
     "source":   "matching to sources (tick table)",
     "task":     "writing task",
 }

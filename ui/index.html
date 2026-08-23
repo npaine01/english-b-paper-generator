@@ -368,7 +368,6 @@ const TYPES = {
   mcq:       {name:"Multiple choice",           group:"both",   rubric:"mcq"},
   true:      {name:"Identify true statements",  group:"both",   rubric:null},
   short:     {name:"Short answer",              group:"both",   rubric:"short"},
-  shorttwo:  {name:"Short answer, two answers", group:"listening", rubric:"short"},
   tf:        {name:"True/false + justification",group:"reading",rubric:"tf"},
   findword:  {name:"Find the word",             group:"reading",rubric:"findword"},
   complete:  {name:"Complete the sentence",     group:"reading",rubric:"complete"},
@@ -460,11 +459,11 @@ function blank(t){
   else if (t === "mcq")    Object.assign(b, {stem:"", answer:0,
                              opts:fitOpts([], MCQ_OPTS(typeof paper === "undefined" || !paper ? "reading" : paper.kind))});
   else if (t === "true")   Object.assign(b, {marks:4, opts:["","","","","","","",""], picked:[]});
-  else if (t === "shorttwo") Object.assign(b, {stem:"", a:"", b:""});
   else if (t === "source") Object.assign(b, {header:"Whose opinion?", cols:["","","Both"], rows:[{text:"",answer:0}]});
   else if (t === "gapfill")Object.assign(b, {stimulus:"", caption:"", gaps:[]});
   else if (T.match)        Object.assign(b, {ref:"", items:[{text:"",line:"",answer:0},{text:"",line:"",answer:1}],
                                              opts:["","","",""], summary:""});
+  else if (t === "short")  Object.assign(b, {stem:"", answer:"", ref:"", two:false, a:"", b:""});
   else if (t === "refer")  Object.assign(b, {stem:"", answer:"", ref:"", line:""});
   else if (t === "tf")     Object.assign(b, {stem:"", answer:"", ref:"", verdict:"T", quote:""});
   else                     Object.assign(b, {stem:"", answer:"", ref:""});
@@ -480,7 +479,7 @@ function numbering(){
     let from = null, to = null, m = 0;
     if (it.t === "text" || it.t === "brk") return {from:null, to:null, m:0};
     if (it.t === "true")            { from = ++q; to = from; m = +it.marks || 0; }
-    else if (it.t === "shorttwo")   { from = ++q; to = from; m = 2; }
+    else if (it.t === "short" && it.two) { from = ++q; to = from; m = 2; }
     else if (T.match)               { from = q + 1; q += it.items.length; to = q; m = it.items.length; }
     else if (it.t === "source")     { from = q + 1; q += it.rows.length;  to = q; m = it.rows.length; }
     else if (it.t === "gapfill")    { const g = gapCount(it.stimulus); from = q + 1; q += g; to = q; m = g; }
@@ -540,7 +539,7 @@ function problems(it){
       out.push("No column heading for the statements — the corpus always prints one.");
   }
 
-  if (it.t === "shorttwo"){
+  if (it.t === "short" && it.two){
     const missing = [!String(it.a || "").trim() && "(a)", !String(it.b || "").trim() && "(b)"]
       .filter(Boolean);
     if (missing.length)
@@ -707,7 +706,7 @@ function buildTex(){
       L.push("\\end{ibstimulus}");
       syncGaps(it);
       it.gaps.forEach(g => L.push(`\\ibgapq[${tex(g.answer)}]`));
-    } else if (it.t === "shorttwo"){
+    } else if (it.t === "short" && it.two){
       L.push(`\\ibshortqtwo[${tex(it.a)}][${tex(it.b)}]{${tex(it.stem)}}`);
     } else if (it.t === "refer"){
       const ln = lineRef(it.line);
@@ -1459,10 +1458,43 @@ function buildFields(body, it, num){
     return;
   }
 
-  if (it.t === "shorttwo"){
+  if (it.t === "short"){
     field(body, "Question", it.stem, v => { it.stem = v; save(); }, true);
-    field(body, "Answer (a)", it.a, v => { it.a = v; save(); });
-    field(body, "Answer (b)", it.b, v => { it.b = v; save(); });
+
+    /* One question type, not two. The paper prints a taller box with (a) and
+       (b) lines when two answers are wanted, and the question is worth 2 marks
+       instead of 1 — but it is the same question, so it is a switch here
+       rather than a separate thing to choose from the list. */
+    const r = el("div", "row");
+    r.append(el("label", null, "Answers"));
+    [[false, "One"], [true, "Two"]].forEach(([v, lab]) => {
+      const on = !!it.two === v;
+      const b = el("button", "btn mini" + (on ? " primary" : ""), lab);
+      b.onclick = () => {
+        if (on) return;
+        /* carry the wording across so switching never costs you what you typed */
+        if (v && !String(it.a || "").trim()) it.a = it.answer || "";
+        if (!v && !String(it.answer || "").trim()) it.answer = it.a || "";
+        it.two = v;
+        render();
+      };
+      r.append(b);
+    });
+    r.append(el("span", "hint", it.two
+      ? "2 marks · taller box with (a) and (b) lines"
+      : "1 mark · one ruled line"));
+    body.append(r);
+
+    if (it.two){
+      field(body, "Answer (a)", it.a, v => { it.a = v; save(); });
+      field(body, "Answer (b)", it.b, v => { it.b = v; save(); });
+      if (paper.kind === "reading")
+        body.append(el("div", "hint",
+          "Two answers under one number appears in the listening papers only — "
+          + "not once in thirteen reading papers."));
+    } else {
+      field(body, "Answer", it.answer, v => { it.answer = v; save(); });
+    }
     return;
   }
 
@@ -1529,27 +1561,24 @@ function buildFields(body, it, num){
 
 function renderPalette(){
   const p = $("#palette"); p.innerHTML = "";
-  const groups = [["structure","Structure"],
-                  [paper.kind, paper.kind === "reading" ? "Reading" : "Listening"],
-                  ["both","Both papers"]];
-  groups.forEach(([g, label]) => {
-    const heads = Object.entries(TYPES).filter(([, T]) => T.group === g);
-    if (!heads.length) return;
-    p.append(el("h4", null, label));
-    heads.forEach(([k, T]) => {
+  /* Only the types that can go on this paper are offered, so grouping them by
+     which paper they belong to says nothing — it is one list. */
+  Object.entries(TYPES)
+    .filter(([, T]) => T.group === "structure" || T.group === "both" || T.group === paper.kind)
+    .forEach(([k, T]) => {
       const b = el("button", "pbtn");
-      b.append(document.createTextNode(k === "text" && paper.kind === "listening" ? "Audio text" : T.name));
-      const hint = {mcq:paper.kind === "listening" ? "3 options" : "4 options",
-                    true:"n marks, 2n options", text:"starts a new page"}[k];
+      b.append(document.createTextNode(
+        k === "text" && paper.kind === "listening" ? "Audio text" : T.name));
+      const hint = {mcq: MCQ_OPTS(paper.kind) + " options",
+                    true: "n marks, 2n options",
+                    short: "one answer, or two",
+                    text: "starts a new page"}[k];
       if (hint) b.append(el("small", null, hint));
       b.onclick = () => { paper.items.push(blank(k)); render();
                           window.scrollTo(0, document.body.scrollHeight); };
       p.append(b);
     });
-  });
 }
-
-/* ═══ actions ════════════════════════════════════════════════════════════ */
 
 function move(i, d){
   const j = i + d;
@@ -1573,6 +1602,10 @@ function load(){
 // older papers kept the line reference inside the word itself
 function migrate(p){
   (p.items || []).forEach(it => {
+    if (it.t === "shorttwo"){          // was its own type until the toggle
+      it.t = "short"; it.two = true;
+      it.a = it.a || ""; it.b = it.b || ""; it.answer = it.answer || "";
+    }
     if (it.t === "refer" && (it.line == null || !String(it.line).trim())){
       const hit = /\(\s*lines?\s*(\d+)\s*(?:[-–—]\s*(\d+))?\s*\)/i.exec(it.stem || "");
       it.line = hit ? (hit[2] ? hit[1] + "-" + hit[2] : hit[1]) : "";
