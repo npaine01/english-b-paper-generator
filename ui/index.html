@@ -382,6 +382,41 @@ body[data-layout="bar"]  .balance{display:flex}
 
 
 
+
+/* Identify true statements snaps to what the target paper actually uses.
+   Listening is unanimous — five, in 7 of 7 booklets — so anything else becomes
+   five. Reading genuinely uses both four and three, so only a five (which no
+   reading paper has ever carried) is pulled back, to the more common four. */
+function trueTarget(kind, it){
+  const marks = +it.marks || 0;
+  if (kind === "listening") return 5;
+  /* Coming back from listening, restore whatever the question was before it
+     was snapped up, so a deliberate three survives the round trip. Only fall
+     back to four when there is nothing to restore. */
+  if (marks === 5) return +it.wasMarks || 4;
+  return marks;                            // 3 and 4 are both attested
+}
+function trueDrift(kind){
+  const lost = [];
+  paper.items.forEach(it => {
+    if (it.t !== "true") return;
+    const want = 2 * trueTarget(kind, it);
+    (it.opts || []).slice(want).forEach(o => { if (String(o).trim()) lost.push(o); });
+  });
+  return lost;
+}
+function normaliseTrue(kind){
+  paper.items.forEach(it => {
+    if (it.t !== "true") return;
+    const marks = trueTarget(kind, it);
+    if (kind === "listening" && +it.marks !== 5) it.wasMarks = +it.marks;
+    else if (kind !== "listening") delete it.wasMarks;
+    it.marks = marks;
+    it.opts = fitOpts(it.opts, 2 * marks);
+    it.picked = (it.picked || []).filter(k => k < 2 * marks).slice(0, marks);
+  });
+}
+
 /* Which question types can live on a given paper. Switching paper kind has to
    deal with what is already written: a reading paper's Matching blocks cannot
    go on a listening paper, and none of the comprehension types belong on
@@ -1934,19 +1969,23 @@ $("#kind").onchange = e => {
     if (!ok){ e.target.value = paper.kind; return; }
   }
 
-  const lost = mcqDrift(kind);
+  /* Reshaping the questions that survive can discard options that have been
+     written. Ask once, listing everything that would go. */
+  const lost = [...mcqDrift(kind), ...trueDrift(kind)];
   if (lost.length){
-    const n = MCQ_OPTS(kind);
     const ok = confirm(
-      `A ${kind === "listening" ? "listening" : "reading"} paper takes ${n} options `
-      + `for multiple choice.\n\nChanging to it will discard ${lost.length} option`
-      + `${lost.length === 1 ? "" : "s"} you have written:\n\n`
-      + lost.map(o => "  • " + o).join("\n") + "\n\nContinue?");
+      `Questions will be reshaped for a `
+      + `${kind === "listening" ? "P2 Listening" : kind === "paper1" ? "P1 Writing" : "P2 Reading"} paper `
+      + `— multiple choice takes ${MCQ_OPTS(kind)} options, and identify true statements `
+      + `${kind === "listening" ? "asks for five" : "asks for four or three"}.\n\n`
+      + `That will discard ${lost.length} option${lost.length === 1 ? "" : "s"} you have written:\n\n`
+      + lost.map(o => "  \u2022 " + o).join("\n") + "\n\nContinue?");
     if (!ok){ e.target.value = paper.kind; return; }
   }
   paper.items = paper.items.filter(it => allowedOn(kind, it.t));
   paper.kind = kind;
   normaliseMcq(kind);
+  normaliseTrue(kind);
   $("#target").value = paper.target =
     kind === "paper1" ? 30 : kind === "listening" ? 25 : 40;
   $("#target").disabled = kind === "paper1";
