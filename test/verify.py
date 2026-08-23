@@ -362,10 +362,18 @@ def run(path, notes_expected):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("usage: verify.py <pdf> [<pdf> ...]", file=sys.stderr)
+        sys.exit(2)
     targets = [(f, "listening" in f or "torture" in f) for f in sys.argv[1:]]
     for path, notes in targets:
         run(path, notes)
     print(f"\n  {checks} checks")
+    if checks == 0:
+        # "0 checks / all passed" is a false pass: it looks identical to success
+        # while proving nothing. Anything that finds no work is a failure.
+        print("  FAILED: no checks ran — wrong paths, or the PDFs were not built")
+        sys.exit(1)
     if fails:
         print(f"  FAILED ({len(fails)}):")
         for f in fails:
