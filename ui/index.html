@@ -684,8 +684,11 @@ function problems(it){
 
   if (it.t === "task"){
     if (!String(it.scenario || "").trim()) out.push("No scenario written yet.");
-    else if (!/write a text in which you/i.test(it.scenario))
-      out.push("Every task in the corpus ends \u201cWrite a text in which you \u2026\u201d "
+    /* All 44 task instructions in the corpus read "Write a text ... in which
+       you", but two name an audience in between — "Write a text for your fellow
+       citizens in which you" — so the two halves need not be adjacent. */
+    else if (!/write a text\b[^.]*\bin which you\b/i.test(it.scenario))
+      out.push("Every task in the corpus reads \u201cWrite a text \u2026 in which you \u2026\u201d "
              + "followed by three things to do.");
     if (new Set(it.types || []).size !== 3) out.push("The same text type is offered twice.");
   }
@@ -1018,7 +1021,11 @@ function render(){
        there is no running total to report — only whether there are three tasks. */
     const tasks = paper.items.filter(x => x.t === "task").length;
     t.textContent = `${tasks} task${tasks === 1 ? "" : "s"} · 30 marks, criterion-marked`;
-    t.className = "tot " + (tasks === 3 ? "ok" : tasks > 3 ? "warn" : "");
+    /* Every Paper 1 in the corpus offers exactly three, so anything else is
+       worth flagging in both directions rather than only when there are too
+       many. */
+    t.className = "tot " + (tasks === 3 ? "ok" : "warn");
+    t.title = tasks === 3 ? "" : "Every Paper 1 in the corpus offers exactly three tasks.";
   } else {
     t.textContent = `${totQ} question${totQ === 1 ? "" : "s"} · ${totM} of ${target} marks`;
     t.className = "tot " + (totM === target && target ? "ok" : totM > target && target ? "warn" : "");
