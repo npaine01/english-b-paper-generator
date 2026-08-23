@@ -409,11 +409,44 @@ function nextTextLabel(){
   return "A";
 }
 
+
+/* Multiple choice is the one question type whose shape differs between the two
+   papers, and the rubric wording is identical, so it is easy to get wrong:
+   reading takes four options, listening takes three. It is fixed, not a
+   default — the editor offers exactly that many and no add or remove. */
+const MCQ_OPTS = kind => (kind === "listening" ? 3 : 4);
+
+function fitOpts(arr, n){
+  const out = (arr || []).slice(0, n);
+  while (out.length < n) out.push("");
+  return out;
+}
+
+/* Bring every multiple choice into line with the current paper kind. Returns
+   the options that would be discarded, so the caller can ask first. */
+function mcqDrift(kind){
+  const n = MCQ_OPTS(kind), lost = [];
+  paper.items.forEach(it => {
+    if (it.t !== "mcq") return;
+    (it.opts || []).slice(n).forEach(o => { if (String(o).trim()) lost.push(o); });
+  });
+  return lost;
+}
+function normaliseMcq(kind){
+  const n = MCQ_OPTS(kind);
+  paper.items.forEach(it => {
+    if (it.t !== "mcq") return;
+    it.opts = fitOpts(it.opts, n);
+    if (it.answer >= n) it.answer = 0;
+  });
+}
+
 function blank(t){
   const b = {id:uid(), t};
   const T = TYPES[t];
   if (t === "text")        Object.assign(b, {label:nextTextLabel(), title:""});
-  else if (t === "mcq")    Object.assign(b, {stem:"", opts:["","","",""], answer:0});
+  else if (t === "mcq")    Object.assign(b, {stem:"", answer:0,
+                             opts:fitOpts([], MCQ_OPTS(typeof paper === "undefined" || !paper ? "reading" : paper.kind))});
   else if (t === "true")   Object.assign(b, {marks:4, opts:["","","","","","","",""], picked:[]});
   else if (t === "shorttwo") Object.assign(b, {stem:"", a:"", b:""});
   else if (t === "source") Object.assign(b, {header:"Whose opinion?", cols:["","","Both"], rows:[{text:"",answer:0}]});
@@ -1080,7 +1113,7 @@ function field(parent, label, value, oninput, multiline){
   return inp;
 }
 
-function optionList(parent, opts, answerIdx, onPick, onEdit, multi, picked){
+function optionList(parent, opts, answerIdx, onPick, onEdit, multi, picked, fixed){
   opts.forEach((o, k) => {
     const r = el("div", "opt");
     r.append(el("span", "lt", LETTERS[k] + "."));
@@ -1095,12 +1128,15 @@ function optionList(parent, opts, answerIdx, onPick, onEdit, multi, picked){
       p.onclick = () => { onPick(k); render(); };
       r.append(p);
     }
-    const x = el("button", "icon del", "✕");
-    x.title = "Remove option";
-    x.onclick = () => { opts.splice(k, 1); render(); };
-    r.append(x);
+    if (!fixed){
+      const x = el("button", "icon del", "✕");
+      x.title = "Remove option";
+      x.onclick = () => { opts.splice(k, 1); render(); };
+      r.append(x);
+    }
     parent.append(r);
   });
+  if (fixed) return;
   const add = el("button", "btn mini", "Add option");
   add.onclick = () => { opts.push(""); render(); };
   parent.append(add);
@@ -1128,7 +1164,15 @@ function buildFields(body, it, num){
     if (ellipsisAdded(it.stem, true))
       body.append(el("div", "hint", "Ends the options' sentence, so an ellipsis is added: "
                                     + ellipsize(it.stem, true).slice(-34)));
-    optionList(body, it.opts, it.answer, k => it.answer = k, null, false);
+    const want = MCQ_OPTS(paper.kind);
+    if (it.opts.length < want) it.opts = fitOpts(it.opts, want);
+    else if (it.opts.length > want && it.opts.slice(want).every(o => !String(o).trim()))
+      it.opts = it.opts.slice(0, want);      // safe to drop: nothing written there
+    if (it.answer >= it.opts.length) it.answer = 0;
+    optionList(body, it.opts, it.answer, k => it.answer = k, null, false, null, true);
+    body.append(el("div", "hint",
+      `${paper.kind === "listening" ? "Listening" : "Reading"} multiple choice takes `
+      + `${want} options — fixed by the paper type.`));
     return;
   }
 
@@ -1547,9 +1591,22 @@ async function compile(){
 
 /* ═══ wiring ═════════════════════════════════════════════════════════════ */
 
-$("#kind").onchange = e => { paper.kind = e.target.value;
-  $("#target").value = paper.target = (paper.kind === "listening" ? 25 : 40);
-  renderPalette(); render(); };
+$("#kind").onchange = e => {
+  const kind = e.target.value, lost = mcqDrift(kind);
+  if (lost.length){
+    const n = MCQ_OPTS(kind);
+    const ok = confirm(
+      `A ${kind === "listening" ? "listening" : "reading"} paper takes ${n} options `
+      + `for multiple choice.\n\nChanging to it will discard ${lost.length} option`
+      + `${lost.length === 1 ? "" : "s"} you have written:\n\n`
+      + lost.map(o => "  • " + o).join("\n") + "\n\nContinue?");
+    if (!ok){ e.target.value = paper.kind; return; }
+  }
+  paper.kind = kind;
+  normaliseMcq(kind);
+  $("#target").value = paper.target = (kind === "listening" ? 25 : 40);
+  renderPalette(); render();
+};
 $("#session").oninput = e => { paper.session = e.target.value; save(); };
 $("#date").oninput = e => { paper.date = e.target.value; save(); };
 $("#target").oninput = e => { paper.target = +e.target.value; render(); };
