@@ -169,6 +169,27 @@ input[type=text]:hover,textarea:hover,select:hover{border-color:var(--ink-3)}
 }
 .mini{font-size:12px;padding:3px 8px}
 
+/* Structure is not a question. These two carry the same visual language as the
+   cards they create — a text section is accent-tinted like its card, a page
+   break is dashed like its card — and they sit on their own row so they do not
+   read as the first two entries in a list of question types. */
+.pbtn.struct{
+  background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600
+}
+.pbtn.struct small{color:var(--accent);opacity:.75}
+.pbtn.struct:hover{background:var(--accent);color:#fff}
+.pbtn.struct:hover small{color:#fff;opacity:.85}
+/* dashed and neutral, exactly like the card it makes — not accent-tinted,
+   because a page break is furniture rather than content */
+.pbtn.brk{background:transparent;border:1px dashed var(--rule);
+          color:var(--ink-2);font-weight:500}
+.pbtn.brk:hover{border-color:var(--ink-3);color:var(--ink);background:var(--sunk)}
+.palrule{
+  grid-column:1/-1;display:flex;align-items:center;gap:9px;margin:3px 0 1px;
+  font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);font-weight:600
+}
+.palrule::after{content:"";flex:1;height:1px;background:var(--rule-2)}
+
 /* ── add palette ─────────────────────────────────────── */
 .addwrap{margin-top:6px}
 .palette{
@@ -1964,39 +1985,47 @@ function buildFields(body, it, num){
 function renderPalette(){
   const p = $("#palette"); p.innerHTML = "";
 
-  const add = (label, sub, make) => {
-    const b = el("button", "pbtn");
+  const add = (label, sub, make, cls) => {
+    const b = el("button", "pbtn" + (cls ? " " + cls : ""));
     b.append(document.createTextNode(label));
     if (sub) b.append(el("small", null, sub));
     b.onclick = () => { paper.items.push(make()); render();
                         window.scrollTo(0, document.body.scrollHeight); };
     p.append(b);
   };
+  const rule = label => p.append(el("div", "palrule", label));
 
-  /* Paper 1 is three writing tasks and nothing else. */
-  Object.entries(TYPES)
-    .filter(([k, T]) => paper.kind === "paper1"
-      ? (T.group === "paper1" || k === "brk")
-      : (T.group === "structure" || T.group === "both" || T.group === paper.kind))
-    .forEach(([k, T]) => {
-      /* The six matching kinds share one card and one layout, but they are six
-         different questions — so they are offered separately here rather than
-         behind a dropdown, and the card's selector remains for changing your
-         mind after the fact. */
-      if (k === "match"){
-        Object.entries(MATCH_KINDS).forEach(([kind, K]) => {
-          add("Match " + K.name.toLowerCase(), K.seen,
-              () => Object.assign(blank("match"), { kind }));
-        });
-        return;
-      }
-      const sub = {mcq: MCQ_OPTS(paper.kind) + " options",
-                   true: TRUE_MARKS(paper.kind) + " marks, " + (2 * TRUE_MARKS(paper.kind)) + " options",
-                   short: "one answer, or two",
-                   text: "starts a new page"}[k];
-      add(k === "text" && paper.kind === "listening" ? "Audio text" : T.name, sub,
-          () => blank(k));
-    });
+  const usable = ([k, T]) => paper.kind === "paper1"
+    ? (T.group === "paper1" || k === "brk")
+    : (T.group === "structure" || T.group === "both" || T.group === paper.kind);
+  const entries = Object.entries(TYPES).filter(usable);
+
+  /* Structure first, on its own row, so it does not read as the opening of the
+     question list. */
+  const struct = entries.filter(([k]) => k === "text" || k === "brk");
+  if (struct.length){
+    rule("Structure");
+    struct.forEach(([k, T]) => add(
+      k === "text" && paper.kind === "listening" ? "Audio text" : T.name,
+      k === "text" ? "starts a new page" : "force a break here",
+      () => blank(k), k === "brk" ? "brk struct" : "struct"));
+    rule(paper.kind === "paper1" ? "Tasks" : "Questions");
+  }
+
+  entries.filter(([k]) => k !== "text" && k !== "brk").forEach(([k, T]) => {
+    /* Six matching kinds share a card and a layout, but they are six different
+       questions, so each is offered by name. */
+    if (k === "match"){
+      Object.entries(MATCH_KINDS).forEach(([kind, K]) =>
+        add("Match " + K.name.toLowerCase(), K.seen,
+            () => Object.assign(blank("match"), { kind })));
+      return;
+    }
+    const sub = {mcq: MCQ_OPTS(paper.kind) + " options",
+                 true: TRUE_MARKS(paper.kind) + " marks, " + (2 * TRUE_MARKS(paper.kind)) + " options",
+                 short: "one answer, or two"}[k];
+    add(T.name, sub, () => blank(k));
+  });
 }
 
 function move(i, d){
