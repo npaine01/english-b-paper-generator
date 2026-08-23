@@ -32,6 +32,9 @@ check:
 
 # Regression check: compile adversarial content and machine-check that the
 # measured layout rules still hold, in every shipped document as well.
+breakdown:
+	@for f in *.ans; do [ -f "$$f" ] && python3 tools/breakdown.py "$$f"; done
+
 verify: all
 	@cp ibenglishb.sty test/
 	@cd test && $(TEX) torture.tex >/dev/null 2>&1
@@ -51,4 +54,4 @@ clean:
 	rm -f test/*.pdf test/*.ans test/*.log test/*.aux test/*.xdv test/ibenglishb.sty
 	rm -rf ui/build
 
-.PHONY: all check clean proof verify ui
+.PHONY: all check clean proof verify ui breakdown
