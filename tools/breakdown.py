@@ -17,6 +17,12 @@ NAMES = {
     "mcq":      "multiple choice",
     "true":     "identify true statements",
     "match":    "matching",
+    "headings": "match headings to paragraphs",
+    "vocab":    "match vocabulary",
+    "halves":   "match sentence halves",
+    "people":   "match statements to people",
+    "matchq":   "match questions to gaps",
+    "gapsummary": "match words into a summary",
     "gapfill":  "gap fill",
     "findword": "find the word or phrase",
     "tf":       "true/false + justification",
@@ -131,11 +137,7 @@ def main(path):
             print("  note  tick table (L3) last appeared Nov 2023 and has not"
                   "\n        been used since. A practice paper probably should"
                   "\n        not include one.")
-    if types["match"]:
-        print("  note  'matching' covers six rubrics (headings, vocabulary,"
-              "\n        sentence halves, people, questions-to-gaps, word list)."
-              "\n        The answer file does not record which, so consecutive"
-              "\n        matching blocks are listed separately but unnamed.")
+
     print()
 
 

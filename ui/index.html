@@ -209,6 +209,18 @@ input[type=text]:hover,textarea:hover,select:hover{border-color:var(--ink-3)}
   border:1px solid var(--rule);border-radius:3px;padding:0 3px
 }
 
+/* A paper whose questions do not match its declared kind — usually a file
+   saved before the paper type was changed. Flagging every card individually
+   says what is wrong but gives no way out, so offer the two sensible repairs. */
+.mismatch{
+  border:1px solid var(--warn);background:var(--warn-soft);color:var(--warn);
+  border-radius:6px;padding:11px 13px;margin-bottom:12px;font-size:12.5px;line-height:1.5
+}
+.mismatch b{font-weight:600}
+.mismatch .acts{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+.mismatch .btn{border-color:var(--warn);color:var(--warn);background:var(--card)}
+.mismatch .btn:hover{background:var(--warn);color:var(--card)}
+
 /* ── outline rail / balance bar ───────────────────────── */
 .rail{
   border-right:1px solid var(--rule);background:var(--card);
@@ -339,6 +351,12 @@ body[data-layout="bar"]  .balance{display:flex}
     </select>
   </div>
   <div class="tot" id="tot">0 questions · 0 marks</div>
+  <div class="field">
+    <label for="recent">Recent</label>
+    <select id="recent"><option value="">—</option></select>
+  </div>
+  <button class="btn" id="newpaper">New</button>
+  <button class="btn" id="clearq">Clear</button>
   <button class="btn" id="save">Save</button>
   <button class="btn" id="load">Open</button>
   <button class="btn" id="dltex">.tex</button>
@@ -357,6 +375,7 @@ body[data-layout="bar"]  .balance{display:flex}
     <div class="railfoot" id="railfoot"></div>
   </aside>
   <div class="left">
+    <div id="mismatch"></div>
     <div id="list"></div>
     <div class="addwrap"><div class="palette" id="palette"></div></div>
   </div>
@@ -371,7 +390,7 @@ body[data-layout="bar"]  .balance{display:flex}
   </div>
 </div>
 
-<input type="file" id="file" accept=".json" hidden>
+<input type="file" id="file" accept=".json,.tex" hidden>
 
 <script>
 "use strict";
@@ -809,10 +828,7 @@ function buildTex(){
      of sides the booklet is printed on (8 or 12, always a multiple of 4) and
      the suffix is the side number. Paper 1 never carries one — 0 of 18 booklets
      — and a school paper has no print run, so it defaults to off here. */
-  const code = paper.pagecode == null
-    ? (paper.kind === "paper1" ? "" : "08EP") : paper.pagecode;
-  if (code) L.push(`\\ibsetfootprefix{${code}}`);
-  else      L.push("\\ibsetfootcode{}");
+  if (paper.pagecode) L.push(`\\ibsetfootprefix{${paper.pagecode}}`);
   L.push("");
   L.push("\\begin{document}");
   L.push("");
@@ -914,6 +930,7 @@ function buildTex(){
   });
 
   L.push("\\end{document}");
+  modelComment().forEach(l => L.push(l));
   return L.join("\n");
 }
 
@@ -984,8 +1001,58 @@ function restore(w){
     document.fonts.ready.then(put);
 }
 
+
+/* Offer a repair when the questions and the paper kind disagree. */
+function renderMismatch(){
+  const box = $("#mismatch"); box.innerHTML = "";
+  const bad = paper.items.filter(it => !allowedOn(paper.kind, it.t));
+  if (!bad.length) return;
+
+  /* Which paper would these questions be at home on? Whichever accepts the
+     most of them. */
+  const fits = ["reading", "listening", "paper1"]
+    .map(k => ({ k, n: paper.items.filter(it => allowedOn(k, it.t)).length }))
+    .sort((a, b) => b.n - a.n);
+  const best = fits[0].k;
+  const label = k => k === "paper1" ? "P1 Writing"
+                   : k === "listening" ? "P2 Listening" : "P2 Reading";
+
+  const d = el("div", "mismatch");
+  const names = [...new Set(bad.map(it => TYPES[it.t] ? TYPES[it.t].name : it.t))];
+  d.innerHTML = `<b>This paper is set to ${label(paper.kind)}, but ${bad.length} of its `
+    + `${paper.items.length} cards cannot go on that paper:</b> ${names.join(", ")}.`
+    + (best !== paper.kind
+        ? ` They look like a ${label(best)} paper — most likely the paper type was changed by mistake.`
+        : "");
+  const acts = el("div", "acts");
+  if (best !== paper.kind){
+    const b1 = el("button", "btn mini", `Change the paper to ${label(best)}`);
+    b1.onclick = () => {
+      paper.kind = best;
+      $("#kind").value = best;
+      paper.target = best === "paper1" ? 30 : best === "listening" ? 25 : 40;
+      $("#target").value = paper.target;
+      $("#target").disabled = best === "paper1";
+      normaliseMcq(best); normaliseTrue(best);
+      renderPalette(); render();
+    };
+    acts.append(b1);
+  }
+  const b2 = el("button", "btn mini", `Remove the ${bad.length} card${bad.length === 1 ? "" : "s"}`);
+  b2.onclick = () => {
+    if (!confirm(`Remove ${bad.length} card${bad.length === 1 ? "" : "s"} that cannot go on a `
+                 + `${label(paper.kind)} paper?\n\n` + names.map(n => "  \u2022 " + n).join("\n"))) return;
+    paper.items = paper.items.filter(it => allowedOn(paper.kind, it.t));
+    render();
+  };
+  acts.append(b2);
+  d.append(acts);
+  box.append(d);
+}
+
 function render(){
   const where = place();
+  renderMismatch();
   const list = $("#list"); list.innerHTML = "";
   const n = numbering();
   let totQ = 0, totM = 0;
@@ -1157,6 +1224,48 @@ function stimulusTex(stimulus){
 }
 
 
+
+/* A generated .tex carries the paper it was built from, base64-encoded in
+   comments. TeX ignores them, so the file compiles exactly as before, but the
+   generator can reopen it with every field intact — which beats parsing LaTeX
+   back into a model, and means a .tex is a save file rather than a dead end.
+   Deleting the block only costs you the ability to edit the paper here. */
+const MODEL_TAG = "%ibeb ";
+function modelComment(){
+  const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(paper))));
+  return ["", "% " + "\u2500".repeat(72),
+          "% Generator state — reopen this file in the generator to edit the paper.",
+          "% These are comments; TeX ignores them.",
+          ...(b64.match(/.{1,72}/g) || []).map(l => MODEL_TAG + l),
+          "% " + "\u2500".repeat(72)];
+}
+function modelFromTex(text){
+  const b64 = text.split(/\r?\n/).filter(l => l.startsWith(MODEL_TAG))
+                  .map(l => l.slice(MODEL_TAG.length).trim()).join("");
+  if (!b64) return null;
+  try { return JSON.parse(decodeURIComponent(escape(atob(b64)))); }
+  catch (e) { return null; }
+}
+
+/* Recent papers, so a session's work is not one stray click from gone. */
+const HIST_KEY = "ibeb.history", HIST_MAX = 12;
+function history(){
+  try { return JSON.parse(localStorage.getItem(HIST_KEY) || "[]"); }
+  catch (e) { return []; }
+}
+function remember(){
+  if (!paper.items.length) return;
+  const h = history();
+  const label = `${paper.kind === "paper1" ? "P1" : paper.kind === "listening" ? "P2 L" : "P2 R"}`
+    + ` · ${paper.items.filter(i => i.t !== "text" && i.t !== "brk").length} questions`
+    + ` · ${paper.session || "—"}`;
+  const snap = { at: new Date().toISOString(), label, paper: JSON.parse(JSON.stringify(paper)) };
+  const same = h[0] && JSON.stringify(h[0].paper) === JSON.stringify(snap.paper);
+  if (same) return;
+  h.unshift(snap);
+  try { localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(0, HIST_MAX))); } catch (e) {}
+}
+
 /* ═══ theme ══════════════════════════════════════════════════════════════ */
 
 const THEME_KEY = "ibeb.theme";
@@ -1218,7 +1327,11 @@ function outline(){
     cur.q += (num.to - num.from + 1);
     cur.marks += num.m;
     if (problems(it).length) cur.bad++;
-    const name = TYPES[it.t].name;
+    /* Name the actual question type, not the family. Six matching kinds share
+       one card because they share one layout, but they are different questions
+       and the balance analysis is only useful if it says which. */
+    const name = it.t === "match" ? "Match " + mkind(it).name.toLowerCase()
+                                  : TYPES[it.t].name;
     const last = cur.blocks[cur.blocks.length - 1];
     if (last && last.name === name){ last.n++; last.m += num.m; last.bad += problems(it).length ? 1 : 0; }
     else cur.blocks.push({ name, n: 1, m: num.m, i, bad: problems(it).length ? 1 : 0 });
@@ -1850,27 +1963,39 @@ function buildFields(body, it, num){
 
 function renderPalette(){
   const p = $("#palette"); p.innerHTML = "";
-  /* Only the types that can go on this paper are offered, so grouping them by
-     which paper they belong to says nothing — it is one list. */
-  /* Paper 1 is three writing tasks and nothing else — the comprehension types
-     that both Paper 2 papers share do not belong on it. */
+
+  const add = (label, sub, make) => {
+    const b = el("button", "pbtn");
+    b.append(document.createTextNode(label));
+    if (sub) b.append(el("small", null, sub));
+    b.onclick = () => { paper.items.push(make()); render();
+                        window.scrollTo(0, document.body.scrollHeight); };
+    p.append(b);
+  };
+
+  /* Paper 1 is three writing tasks and nothing else. */
   Object.entries(TYPES)
     .filter(([k, T]) => paper.kind === "paper1"
       ? (T.group === "paper1" || k === "brk")
       : (T.group === "structure" || T.group === "both" || T.group === paper.kind))
     .forEach(([k, T]) => {
-      const b = el("button", "pbtn");
-      b.append(document.createTextNode(
-        k === "text" && paper.kind === "listening" ? "Audio text" : T.name));
-      const hint = {mcq: MCQ_OPTS(paper.kind) + " options",
-                    true: TRUE_MARKS(paper.kind) + " marks, " + (2 * TRUE_MARKS(paper.kind)) + " options",
-                    short: "one answer, or two",
-                    match: "six kinds, one layout",
-                    text: "starts a new page"}[k];
-      if (hint) b.append(el("small", null, hint));
-      b.onclick = () => { paper.items.push(blank(k)); render();
-                          window.scrollTo(0, document.body.scrollHeight); };
-      p.append(b);
+      /* The six matching kinds share one card and one layout, but they are six
+         different questions — so they are offered separately here rather than
+         behind a dropdown, and the card's selector remains for changing your
+         mind after the fact. */
+      if (k === "match"){
+        Object.entries(MATCH_KINDS).forEach(([kind, K]) => {
+          add("Match " + K.name.toLowerCase(), K.seen,
+              () => Object.assign(blank("match"), { kind }));
+        });
+        return;
+      }
+      const sub = {mcq: MCQ_OPTS(paper.kind) + " options",
+                   true: TRUE_MARKS(paper.kind) + " marks, " + (2 * TRUE_MARKS(paper.kind)) + " options",
+                   short: "one answer, or two",
+                   text: "starts a new page"}[k];
+      add(k === "text" && paper.kind === "listening" ? "Audio text" : T.name, sub,
+          () => blank(k));
     });
 }
 
@@ -1933,6 +2058,7 @@ function download(name, text, type){
 let lastPdf = null;
 
 async function compile(){
+  remember(); renderRecent();
   const btn = $("#compile"), st = $("#status");
   btn.disabled = true; btn.textContent = "Compiling…";
   st.className = "status"; st.textContent = "Running tectonic…";
@@ -2005,10 +2131,57 @@ $("#kind").onchange = e => {
   $("#target").value = paper.target =
     kind === "paper1" ? 30 : kind === "listening" ? 25 : 40;
   $("#target").disabled = kind === "paper1";
-  paper.pagecode = kind === "paper1" ? "" : "08EP";
-  $("#pagecode").value = paper.pagecode;
+
   renderPalette(); render();
 };
+
+/* Start again, but keep what you had — the paper goes into Recent first. */
+/* Clear keeps the paper — kind, session, date, target, instructions — and
+   removes only the questions. New starts over completely. */
+$("#clearq").onclick = () => {
+  const n = paper.items.length;
+  if (!n) return;
+  if (!confirm(`Remove all ${n} card${n === 1 ? "" : "s"}?\n\nThe session, date, `
+             + `paper type and target are kept, and this paper goes into Recent first.`)) return;
+  remember();
+  openTexts = null; activeText = 0;
+  paper.items = [];
+  renderRecent(); render();
+};
+
+$("#newpaper").onclick = () => {
+  if (paper.items.length && !confirm(
+      "Start a new paper?\n\nThe current one is kept under Recent, and Save writes it to a file."))
+    return;
+  remember();
+  openTexts = null; activeText = 0;
+  paper = fresh();
+  syncBar(); renderPalette(); renderRecent(); render();
+};
+
+function renderRecent(){
+  const sel = $("#recent");
+  const h = history();
+  sel.innerHTML = "";
+  const none = el("option", null, h.length ? `${h.length} saved` : "—");
+  none.value = ""; sel.append(none);
+  h.forEach((snap, i) => {
+    const when = snap.at.slice(11, 16) + " · " + snap.at.slice(5, 10);
+    const o = el("option", null, `${when}  ${snap.label}`);
+    o.value = String(i); sel.append(o);
+  });
+  sel.onchange = e => {
+    const snap = history()[+e.target.value];
+    e.target.value = "";
+    if (!snap) return;
+    if (paper.items.length && !confirm(`Open “${snap.label}”?\n\nThe current paper is kept under Recent.`)) return;
+    remember();
+    openTexts = null; activeText = 0;
+    paper = migrate(snap.paper);
+    syncBar(); renderPalette(); renderRecent(); render();
+  };
+}
+
 $("#instr").onchange = e => { paper.instructions = e.target.value; render(); };
 $("#pagecode").onchange = e => { paper.pagecode = e.target.value; render(); };
 $("#session").oninput = e => { paper.session = e.target.value; save(); };
@@ -2025,12 +2198,18 @@ $("#file").onchange = e => {
   const rd = new FileReader();
   rd.onload = () => {
     try{
-      paper = migrate(JSON.parse(rd.result));
+      remember();
+      const raw = String(rd.result);
+      const fromTex = /\.tex$/i.test(f.name) ? modelFromTex(raw) : null;
+      if (/\.tex$/i.test(f.name) && !fromTex)
+        throw new Error("no generator state in that .tex");
+      paper = migrate(fromTex || JSON.parse(raw));
       openTexts = null;                       // the new paper has its own sections
       activeText = 0;
-      syncBar(); renderPalette(); render();
+      syncBar(); renderPalette(); renderRecent(); render();
     } catch(err){
-      alert("That file isn't a saved paper.");
+      alert("That file isn't a saved paper.\n\nOpen a .json saved here, or a .tex this "
+          + "generator produced — a .tex written by hand carries no paper to load.");
     }
   };
   rd.readAsText(f); e.target.value = "";
@@ -2045,8 +2224,7 @@ function syncBar(){
   $("#date").value = paper.date;
   $("#target").value = paper.target;
   $("#instr").value = paper.instructions || "standard";
-  $("#pagecode").value = paper.pagecode == null
-    ? (paper.kind === "paper1" ? "" : "08EP") : paper.pagecode;
+  $("#pagecode").value = paper.pagecode || "";
 }
 
 $("#theme").onchange = e => applyTheme(e.target.value);
@@ -2056,7 +2234,7 @@ window.addEventListener("resize", () => { if ($("#layout").value === "auto") app
 initTheme();
 $("#layout").value = layoutPref();
 applyLayout();
-syncBar(); renderPalette(); render();
+syncBar(); renderPalette(); renderRecent(); render();
 if (document.fonts && document.fonts.status !== "loaded")
   document.fonts.ready.then(() => render());   // re-measure with the real faces
 </script>

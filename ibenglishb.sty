@@ -250,12 +250,15 @@
   \endgroup
   \nobreak\vspace{\ibrubricskip}\nobreak}
 \newcommand\ibrubricmcq{\ibeb@rubric{\ibstr@mcq}}
-\newcommand\ibrubricmatchq{\ibeb@rubric{\ibstr@matchq}}
-\newcommand\ibrubricheadings{\ibeb@rubric{\ibstr@headings}}
-\newcommand\ibrubricvocab{\ibeb@rubric{\ibstr@vocab}}
-\newcommand\ibrubricpeople{\ibeb@rubric{\ibstr@people}}
-\newcommand\ibrubrichalves{\ibeb@rubric{\ibstr@halves}}
-\newcommand\ibrubricgapsummary{\ibeb@rubric{\ibstr@gapsummary}}
+% The answer file records which of the six matching questions this is, so the
+% per-text analysis can name it rather than reporting six types as one.
+\newcommand\ibeb@matchkind{match}
+\newcommand\ibrubricmatchq{\def\ibeb@matchkind{matchq}\ibeb@rubric{\ibstr@matchq}}
+\newcommand\ibrubricheadings{\def\ibeb@matchkind{headings}\ibeb@rubric{\ibstr@headings}}
+\newcommand\ibrubricvocab{\def\ibeb@matchkind{vocab}\ibeb@rubric{\ibstr@vocab}}
+\newcommand\ibrubricpeople{\def\ibeb@matchkind{people}\ibeb@rubric{\ibstr@people}}
+\newcommand\ibrubrichalves{\def\ibeb@matchkind{halves}\ibeb@rubric{\ibstr@halves}}
+\newcommand\ibrubricgapsummary{\def\ibeb@matchkind{gapsummary}\ibeb@rubric{\ibstr@gapsummary}}
 \newcommand\ibrubricshort{\ibeb@rubric{\ibstr@short}}
 \newcommand\ibrubricshortone{\ibeb@rubric{\ibstr@shortone}}
 \newcommand\ibrubricfindword[1]{\ibeb@rubric{\ibstr@findword{#1}}}
@@ -453,12 +456,12 @@
 
 % --- one numbered item in the left-hand column ------------------------------
 \newcommand\mgap[1][]{%
-  \ibeb@newq{#1}{1}{match}\stepcounter{ibeb@nitems}%
+  \expandafter\ibeb@newq\expandafter{#1}{1}{\ibeb@matchkind}\stepcounter{ibeb@nitems}%
   \ibeb@add\ibeb@items{%
     \noexpand\ibeb@itemrow{\arabic{ibq}}%
       {\noexpand\ibgap{\arabic{ibq}}\noexpand\ibeb@show{\unexpanded{#1}}}}}
 \newcommand\mitem[2][]{%
-  \ibeb@newq{#1}{1}{match}\stepcounter{ibeb@nitems}%
+  \expandafter\ibeb@newq\expandafter{#1}{1}{\ibeb@matchkind}\stepcounter{ibeb@nitems}%
   \ibeb@add\ibeb@items{%
     \noexpand\ibeb@itemrow{\arabic{ibq}}%
       {\unexpanded{#2}\noexpand\ibeb@show{\unexpanded{#1}}}}}
@@ -903,12 +906,16 @@
 % ═══════════════════════════════════════════════════════════════════════════
 \newcommand\ibsessioncode{0000\,--\,0000}
 \newcommand\ibsetsession[1]{\renewcommand\ibsessioncode{#1}}
-% The internal page code runs in step with the page number (08EP01, 08EP02…),
-% so it can never drift out of sync.  \ibsetfootcode overrides it for one
-% document; \ibsetfootcode{} switches it off.
-\newcommand\ibfootprefix{08EP}
+% The internal page code (08EP01, 08EP02…) is a print-shop signature marker:
+% the prefix is the number of sides the booklet is printed on and the suffix is
+% the side number.  A school paper has no print run, so it is off by default.
+% \ibsetfootprefix{08EP} switches it on and keeps it in step with the page
+% number; \ibsetfootcode{…} overrides the whole thing for one document.
+\newcommand\ibfootprefix{}
 \newcommand\ibsetfootprefix[1]{\renewcommand\ibfootprefix{#1}}
-\newcommand\ibfootcode{\ibfootprefix\ifnum\value{page}<10 0\fi\arabic{page}}
+\newcommand\ibfootcode{%
+  \ifx\ibfootprefix\empty\else
+    \ibfootprefix\ifnum\value{page}<10 0\fi\arabic{page}\fi}
 \newcommand\ibsetfootcode[1]{\renewcommand\ibfootcode{#1}}
 \newif\ifibeb@turnover \ibeb@turnoverfalse
 \newcommand\ibturnover{\global\ibeb@turnovertrue}
