@@ -2160,7 +2160,15 @@ async function compile(){
       : (previewKind === "key" ? "Markscheme · " : "Compiled · ") + new Date().toLocaleTimeString();
   }catch(e){
     st.className = "status bad";
-    st.textContent = "Cannot reach the server — is `make ui` still running?";
+    /* Say where it tried. The usual cause is a page opened straight off disk
+       or from a stale port, where a request to /compile goes nowhere — and a
+       message that only asks whether the server is running sends you to check
+       the one thing that is probably fine. */
+    st.textContent = location.protocol === "file:"
+      ? "This page was opened from a file, not from the server. "
+        + "Run `make ui` and use the address it prints (http://127.0.0.1:8731/)."
+      : `Cannot reach ${location.origin} — is \`make ui\` still running, `
+        + `and is this the address it printed?`;
   }finally{
     btn.disabled = false; btn.textContent = "Compile";
   }
