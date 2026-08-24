@@ -345,6 +345,8 @@ body[data-layout="bar"]  .balance{display:flex}
       <option value="paper1">P1 Writing</option>
     </select>
   </div>
+  <div class="field"><label for="title">Title</label><input type="text" id="title"
+      placeholder="MT Reading" title="For your own reference — midterm, practice, which class"></div>
   <div class="field"><label for="session">Session</label><input type="text" id="session" value="QDHS 2026"></div>
   <div class="field"><label for="date">Date</label><input type="text" id="date" value="8 May 2026"></div>
   <div class="field"><label for="target">Target</label><input type="number" id="target" value="40" min="0" max="99"></div>
@@ -588,7 +590,7 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 let paper = load() || fresh();
 
 function fresh(){
-  return {kind:"reading", session:"QDHS 2026", date:"8 May 2026", target:40, items:[
+  return {id:uid(), title:"", kind:"reading", session:"QDHS 2026", date:"8 May 2026", target:40, items:[
     {id:uid(), t:"text", label:"A", title:"Headline of your first text"},
     {id:uid(), t:"short", stem:"", answer:""},
   ]};
@@ -1288,15 +1290,34 @@ function history(){
 }
 function remember(){
   if (!paper.items.length) return;
+  if (!paper.id) paper.id = uid();
   const h = history();
-  const label = `${paper.kind === "paper1" ? "P1" : paper.kind === "listening" ? "P2 L" : "P2 R"}`
-    + ` · ${paper.items.filter(i => i.t !== "text" && i.t !== "brk").length} questions`
-    + ` · ${paper.session || "—"}`;
-  const snap = { at: new Date().toISOString(), label, paper: JSON.parse(JSON.stringify(paper)) };
-  const same = h[0] && JSON.stringify(h[0].paper) === JSON.stringify(snap.paper);
-  if (same) return;
+  const n = paper.items.filter(i => i.t !== "text" && i.t !== "brk").length;
+  const what = paper.kind === "paper1" ? "P1" : paper.kind === "listening" ? "P2 Listening" : "P2 Reading";
+  const snap = { id: paper.id, at: new Date().toISOString(),
+                 title: paper.title || "", what, n,
+                 paper: JSON.parse(JSON.stringify(paper)) };
+  /* Replace this paper's entry rather than adding another. Editing an existing
+     paper and compiling it repeatedly used to leave a snapshot every time, so
+     Recent filled with near-identical copies of one paper. */
+  const at = h.findIndex(x => x.id === paper.id);
+  if (at >= 0) h.splice(at, 1);
+  else if (JSON.stringify(h[0] && h[0].paper) === JSON.stringify(snap.paper)) return;
   h.unshift(snap);
   try { localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(0, HIST_MAX))); } catch (e) {}
+}
+
+/* Before replacing what is on screen, ask whether to keep it. Answering no is
+   how you avoid collecting a copy of every experiment. */
+function keepCurrent(why){
+  if (!paper.items.length) return true;
+  const known = history().some(x => x.id === paper.id);
+  const name = paper.title ? `“${paper.title}”` : "the current paper";
+  const r = confirm(`${why}\n\nKeep ${name} in Recent?\n\n`
+    + (known ? "It is already there and will be updated."
+             : "Cancel to discard it instead — Save writes it to a file."));
+  if (r) remember();
+  return true;
 }
 
 /* ═══ theme ══════════════════════════════════════════════════════════════ */
@@ -2090,6 +2111,15 @@ function migrate(p){
   return p;
 }
 
+/* Name a file after the paper, so a folder of them can be told apart without
+   opening any: "MT Reading — QDHS 2026.tex" rather than paper.tex four times. */
+function fileStem(){
+  const bits = [paper.title, paper.session].map(x => (x || "").trim()).filter(Boolean);
+  const stem = bits.join(" — ").replace(/[\\/:*?"<>|]+/g, "-").slice(0, 70);
+  return stem || (paper.kind === "paper1" ? "paper-1"
+                : paper.kind === "listening" ? "listening" : "reading");
+}
+
 function download(name, text, type){
   const b = new Blob([text], {type: type || "text/plain"});
   const a = el("a"); a.href = URL.createObjectURL(b); a.download = name;
@@ -2213,10 +2243,8 @@ $("#clearq").onclick = () => {
 };
 
 $("#newpaper").onclick = () => {
-  if (paper.items.length && !confirm(
-      "Start a new paper?\n\nThe current one is kept under Recent, and Save writes it to a file."))
-    return;
-  remember();
+  if (paper.items.length && !confirm("Start a new paper?")) return;
+  keepCurrent("Starting a new paper.");
   openTexts = null; activeText = 0;
   paper = fresh();
   syncBar(); renderPalette(); renderRecent(); render();
@@ -2230,49 +2258,41 @@ function renderRecent(){
   none.value = ""; sel.append(none);
   h.forEach((snap, i) => {
     const when = snap.at.slice(11, 16) + " · " + snap.at.slice(5, 10);
-    const o = el("option", null, `${when}  ${snap.label}`);
+    const name = snap.title || `${snap.what} · ${snap.n} questions`;
+    const o = el("option", null, `${name}   (${when})`);
     o.value = String(i); sel.append(o);
   });
   sel.onchange = e => {
     const snap = history()[+e.target.value];
     e.target.value = "";
     if (!snap) return;
-    if (paper.items.length && !confirm(`Open “${snap.label}”?\n\nThe current paper is kept under Recent.`)) return;
-    remember();
+    if (snap.id === paper.id){ render(); return; }   // already open
+    keepCurrent(`Open “${snap.title || snap.what}”?`);
     openTexts = null; activeText = 0;
     paper = migrate(snap.paper);
+    if (!paper.id) paper.id = uid();
     syncBar(); renderPalette(); renderRecent(); render();
   };
 }
 
-/* The markscheme is built from the .ans the paper writes as it compiles, so it
-   cannot describe a paper that no longer exists. Asking for it compiles both. */
-let previewKind = "paper";
-function setPreviewKind(k){
-  previewKind = k;
-  $("#showpaper").classList.toggle("primary", k === "paper");
-  $("#showkey").classList.toggle("primary", k === "key");
-}
-$("#showpaper").onclick = () => { setPreviewKind("paper"); compile(); };
-$("#showkey").onclick   = () => { setPreviewKind("key");   compile(); };
-
 $("#instr").onchange = e => { paper.instructions = e.target.value; render(); };
 $("#pagecode").onchange = e => { paper.pagecode = e.target.value; render(); };
+$("#title").oninput = e => { paper.title = e.target.value; save(); renderRecent(); };
 $("#session").oninput = e => { paper.session = e.target.value; save(); };
 $("#date").oninput = e => { paper.date = e.target.value; save(); };
 $("#target").oninput = e => { paper.target = +e.target.value; render(); };
 $("#compile").onclick = compile;
-$("#dltex").onclick = () => download("paper.tex", buildTex(), "text/x-tex");
+$("#dltex").onclick = () => download(fileStem() + ".tex", buildTex(), "text/x-tex");
 $("#dlpdf").onclick = () => { if (lastPdf){ const a = el("a");
   a.href = lastPdf; a.download = "paper.pdf"; a.click(); } };
-$("#save").onclick = () => download("paper.json", JSON.stringify(paper, null, 2), "application/json");
+$("#save").onclick = () => download(fileStem() + ".json", JSON.stringify(paper, null, 2), "application/json");
 $("#load").onclick = () => $("#file").click();
 $("#file").onchange = e => {
   const f = e.target.files[0]; if (!f) return;
   const rd = new FileReader();
   rd.onload = () => {
     try{
-      remember();
+      keepCurrent(`Opening ${f.name}.`);
       const raw = String(rd.result);
       const fromTex = /\.tex$/i.test(f.name) ? modelFromTex(raw) : null;
       if (/\.tex$/i.test(f.name) && !fromTex)
@@ -2294,6 +2314,7 @@ document.addEventListener("keydown", e => {
 
 function syncBar(){
   $("#kind").value = paper.kind;
+  $("#title").value = paper.title || "";
   $("#session").value = paper.session;
   $("#date").value = paper.date;
   $("#target").value = paper.target;
