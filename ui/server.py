@@ -24,6 +24,18 @@ PORT = int(os.environ.get("IBEB_PORT", "8731"))
 BUILD = LATEX / "ui" / "build"
 
 
+def _tex(t):
+    """Escape a plain-text note for LaTeX. The notes come from a text field, so
+    a stray & or % would otherwise break the markscheme or silently eat the
+    rest of the line."""
+    for a, b in (("\\\\", "\\textbackslash{}"), ("&", "\\&"), ("%", "\\%"),
+                 ("$", "\\$"), ("#", "\\#"), ("_", "\\_"),
+                 ("{", "\\{"), ("}", "\\}"), ("~", "\\textasciitilde{}"),
+                 ("^", "\\textasciicircum{}")):
+        t = t.replace(a, b)
+    return t.strip()
+
+
 def tectonic():
     exe = shutil.which("tectonic")
     if exe:
@@ -78,6 +90,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         tex = payload.get("tex", "")
         want_key = bool(payload.get("markscheme"))
         session = str(payload.get("session", ""))[:60]
+        notes = payload.get("notes") or []
         if not tex.strip():
             return self._send(400, "text/plain", b"nothing to compile")
 
@@ -121,6 +134,25 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 src = (LATEX / "markscheme.tex").read_text(encoding="utf-8")
                 src = src.replace("\\newcommand\\ibmarkschemesource{reading-question-booklet}",
                                   "\\newcommand\\ibmarkschemesource{paper}")
+
+                # Replace the sample notes with the ones this paper carries.
+                # \ibnote must be declared before \ibmarkschemetable reads them.
+                lines = [l for l in src.splitlines()
+                         if not l.startswith("\\ibnote{")]
+                out = []
+                for l in lines:
+                    if l.strip() == "\\ibmarkschemetable":
+                        for nt in notes[:200]:
+                            try:
+                                q = int(nt.get("q"))
+                            except (TypeError, ValueError):
+                                continue
+                            a = _tex(str(nt.get("accept", ""))[:400])
+                            b = _tex(str(nt.get("reject", ""))[:400])
+                            if a or b:
+                                out.append("\\ibnote{%d}{%s}{%s}" % (q, a, b))
+                    out.append(l)
+                src = "\n".join(out) + "\n"
                 if session:
                     import re as _re
                     # a function, not a template: the replacement contains

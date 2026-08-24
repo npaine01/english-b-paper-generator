@@ -1142,6 +1142,7 @@ function render(){
     if (it.t !== "brk"){
       const body = el("div", "cbody");
       buildFields(body, it, num);
+      if (num.from && it.t !== "task") markschemeNote(body, it, num);
       problems(it).forEach(p => body.append(el("div", "flag", p)));
       card.append(body);
     }
@@ -1609,6 +1610,46 @@ function optionList(parent, opts, answerIdx, onPick, onEdit, multi, picked, fixe
   const add = el("button", "btn mini", "Add option");
   add.onclick = () => { opts.push(""); render(); };
   parent.append(add);
+}
+
+
+/* The markscheme can carry "Accept" and "Do not accept" against a question —
+   \ibnote in markscheme.tex — which is how the IB records that a paraphrase is
+   fine, or that a particular near-miss is not. It is folded away because most
+   questions do not need one. */
+function markschemeNote(body, it, num){
+  const has = String(it.accept || "").trim() || String(it.reject || "").trim();
+  const d = document.createElement("details");
+  d.className = "help";
+  if (has) d.open = true;
+  const sum = document.createElement("summary");
+  sum.textContent = has ? "Markscheme note" : "Add a markscheme note";
+  d.append(sum);
+
+  const wrap = el("div", "helpbody");
+  wrap.style.background = "transparent";
+  wrap.style.padding = "6px 0 0";
+
+  const line = (label, key, placeholder) => {
+    const r = el("div", "row");
+    const l = el("label", null, label);
+    l.style.minWidth = "104px";
+    r.append(l);
+    const inp = el("input"); inp.type = "text";
+    inp.value = it[key] || "";
+    inp.placeholder = placeholder;
+    inp.style.flex = "1";
+    inp.oninput = e => { it[key] = e.target.value; save(); };
+    r.append(inp);
+    wrap.append(r);
+  };
+  line("Accept", "accept", "e.g. any answer meaning the same");
+  line("Do not accept", "reject", "e.g. the words of the question repeated");
+  wrap.append(el("div", "hint",
+    `Printed against question ${num.from === num.to ? num.from : num.from + "\u2013" + num.to} `
+    + "in the markscheme. Leave either blank to omit that column."));
+  d.append(wrap);
+  body.append(d);
 }
 
 function buildFields(body, it, num){
@@ -2186,7 +2227,14 @@ async function compile(){
      server" — which sent you to check a server that was running fine. */
   let body;
   try{
-    body = JSON.stringify({tex: buildTex(),
+    const n = numbering();
+    const notes = paper.items.map((it, i) => ({ it, n: n[i] }))
+      .filter(({ it, n }) => n.from && (String(it.accept || "").trim()
+                                     || String(it.reject || "").trim()))
+      .map(({ it, n }) => ({ q: n.from,
+                             accept: String(it.accept || "").trim(),
+                             reject: String(it.reject || "").trim() }));
+    body = JSON.stringify({tex: buildTex(), notes,
                            markscheme: (typeof previewKind !== "undefined" && previewKind === "key"),
                            session: paper.session || ""});
   }catch(e){
