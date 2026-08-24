@@ -1311,12 +1311,19 @@ function remember(){
    how you avoid collecting a copy of every experiment. */
 function keepCurrent(why){
   if (!paper.items.length) return true;
-  const known = history().some(x => x.id === paper.id);
-  const name = paper.title ? `“${paper.title}”` : "the current paper";
-  const r = confirm(`${why}\n\nKeep ${name} in Recent?\n\n`
-    + (known ? "It is already there and will be updated."
-             : "Cancel to discard it instead — Save writes it to a file."));
-  if (r) remember();
+  if (!paper.id) paper.id = uid();
+  /* If this paper is already in Recent, keeping it just refreshes that entry —
+     nothing accumulates and nothing is lost, so there is nothing worth asking
+     about. The question only matters for a paper that would be added. */
+  if (history().some(x => x.id === paper.id)){ remember(); return true; }
+
+  const name = paper.title ? `\u201c${paper.title}\u201d` : "the current paper";
+  /* A browser confirm offers only OK and Cancel, so the question has to say
+     which is which — otherwise there appears to be no way to say no. */
+  if (confirm(`${why}\n\n`
+      + `OK  \u2014  keep ${name} in Recent first\n`
+      + `Cancel  \u2014  do not keep it; it is gone unless you have saved it to a file`))
+    remember();
   return true;
 }
 
@@ -2303,12 +2310,23 @@ function renderRecent(){
   };
 }
 
+/* Which document the preview shows. The markscheme is built from the .ans the
+   paper writes as it compiles, so asking for it compiles both. */
+let previewKind = "paper";
+function setPreviewKind(k){
+  previewKind = k;
+  $("#showpaper").classList.toggle("primary", k === "paper");
+  $("#showkey").classList.toggle("primary", k === "key");
+}
+
 $("#instr").onchange = e => { paper.instructions = e.target.value; render(); };
 $("#pagecode").onchange = e => { paper.pagecode = e.target.value; render(); };
 $("#title").oninput = e => { paper.title = e.target.value; save(); renderRecent(); };
 $("#session").oninput = e => { paper.session = e.target.value; save(); };
 $("#date").oninput = e => { paper.date = e.target.value; save(); };
 $("#target").oninput = e => { paper.target = +e.target.value; render(); };
+$("#showpaper").onclick = () => { setPreviewKind("paper"); compile(); };
+$("#showkey").onclick   = () => { setPreviewKind("key");   compile(); };
 $("#compile").onclick = compile;
 $("#dltex").onclick = () => download(fileStem() + ".tex", buildTex(), "text/x-tex");
 $("#dlpdf").onclick = () => { if (lastPdf){ const a = el("a");
@@ -2357,6 +2375,7 @@ window.addEventListener("resize", () => { if ($("#layout").value === "auto") app
 initTheme();
 $("#layout").value = layoutPref();
 applyLayout();
+setPreviewKind("paper");
 syncBar(); renderPalette(); renderRecent(); render();
 if (document.fonts && document.fonts.status !== "loaded")
   document.fonts.ready.then(() => render());   // re-measure with the real faces
