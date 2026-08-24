@@ -200,6 +200,20 @@ input[type=text]:hover,textarea:hover,select:hover{border-color:var(--ink-3)}
 }
 .palrule::after{content:"";flex:1;height:1px;background:var(--rule-2)}
 
+/* Three outcomes, so not a confirm(): keep it, discard it, or do not do the
+   thing at all. Cancel means cancel — never "discard", which is a destructive
+   answer nobody expects from a button labelled Cancel. */
+#ask{
+  border:1px solid var(--rule);border-radius:8px;padding:18px 20px;max-width:430px;
+  background:var(--card);color:var(--ink);font:inherit;
+  box-shadow:0 8px 40px -12px rgba(0,0,0,.35)
+}
+#ask::backdrop{background:rgba(20,22,26,.45)}
+#ask p{margin:0 0 10px;font-size:13.5px;line-height:1.55}
+#ask #askwhy{font-weight:600}
+#ask #askq{color:var(--ink-2)}
+.askrow{display:flex;gap:8px;align-items:center;margin-top:16px}
+
 /* ── add palette ─────────────────────────────────────── */
 .addwrap{margin-top:6px}
 .palette{
@@ -424,6 +438,17 @@ body[data-layout="bar"]  .balance{display:flex}
     <pre id="log"></pre>
   </div>
 </div>
+
+<dialog id="ask">
+  <p id="askwhy"></p>
+  <p id="askq"></p>
+  <div class="askrow">
+    <button class="btn primary" id="askkeep">Keep in Recent</button>
+    <button class="btn" id="askdiscard">Discard</button>
+    <div class="spacer"></div>
+    <button class="btn" id="askcancel">Cancel</button>
+  </div>
+</dialog>
 
 <input type="file" id="file" accept=".json,.tex" hidden>
 
@@ -1309,21 +1334,36 @@ function remember(){
 
 /* Before replacing what is on screen, ask whether to keep it. Answering no is
    how you avoid collecting a copy of every experiment. */
-function keepCurrent(why){
+/* Ask what should happen to the paper on screen. Resolves "keep", "discard" or
+   "cancel"; the caller must do nothing at all on "cancel". */
+function askKeep(why, name, known){
+  return new Promise(resolve => {
+    const d = $("#ask");
+    $("#askwhy").textContent = why;
+    $("#askq").textContent = known
+      ? `${name} is already in Recent. Keeping it updates that copy.`
+      : `${name} is not saved anywhere. Keeping it puts it in Recent; `
+        + `discarding it loses it unless you have saved it to a file.`;
+    $("#askkeep").textContent = known ? "Update in Recent" : "Keep in Recent";
+    const done = v => { d.close(); resolve(v); };
+    $("#askkeep").onclick    = () => done("keep");
+    $("#askdiscard").onclick = () => done("discard");
+    $("#askcancel").onclick  = () => done("cancel");
+    d.onclose = () => resolve("cancel");        // Esc, or the backdrop
+    d.showModal();
+    $("#askkeep").focus();
+  });
+}
+
+/* -> true if the caller should go ahead. */
+async function keepCurrent(why){
   if (!paper.items.length) return true;
   if (!paper.id) paper.id = uid();
-  /* If this paper is already in Recent, keeping it just refreshes that entry —
-     nothing accumulates and nothing is lost, so there is nothing worth asking
-     about. The question only matters for a paper that would be added. */
-  if (history().some(x => x.id === paper.id)){ remember(); return true; }
-
-  const name = paper.title ? `\u201c${paper.title}\u201d` : "the current paper";
-  /* A browser confirm offers only OK and Cancel, so the question has to say
-     which is which — otherwise there appears to be no way to say no. */
-  if (confirm(`${why}\n\n`
-      + `OK  \u2014  keep ${name} in Recent first\n`
-      + `Cancel  \u2014  do not keep it; it is gone unless you have saved it to a file`))
-    remember();
+  const known = history().some(x => x.id === paper.id);
+  const name = paper.title ? `\u201c${paper.title}\u201d` : "The current paper";
+  const answer = await askKeep(why, name, known);
+  if (answer === "cancel") return false;
+  if (answer === "keep") remember();
   return true;
 }
 
@@ -2250,7 +2290,7 @@ $("#kind").onchange = e => {
    clearing questions almost always means rebuilding on the same texts. Page
    breaks go with the questions, being furniture for a layout that no longer
    exists. New is the button for starting with nothing. */
-$("#clearq").onclick = () => {
+$("#clearq").onclick = async () => {
   const keep = paper.items.filter(it => it.t === "text");
   const going = paper.items.length - keep.length;
   if (!going){
@@ -2259,7 +2299,7 @@ $("#clearq").onclick = () => {
        doing nothing and looking broken. */
     if (!confirm(`There are no questions to clear.\n\nRemove the ${keep.length} text `
                + `section${keep.length === 1 ? "" : "s"} as well?`)) return;
-    remember();
+    if (!await keepCurrent(`Remove the text sections too?`)) return;
     openTexts = null; activeText = 0;
     paper.items = [];
     renderRecent(); render();
@@ -2271,15 +2311,14 @@ $("#clearq").onclick = () => {
     : "\n\nEverything at the top is kept.";
   if (!confirm(`Remove ${going} question${going === 1 ? "" : "s"}?` + kept
              + `\n\nThis paper goes into Recent first.`)) return;
-  remember();
+  if (!await keepCurrent(`Clear the questions from this paper?`)) return;
   openTexts = null; activeText = 0;
   paper.items = keep;
   renderRecent(); render();
 };
 
-$("#newpaper").onclick = () => {
-  if (paper.items.length && !confirm("Start a new paper?")) return;
-  keepCurrent("Starting a new paper.");
+$("#newpaper").onclick = async () => {
+  if (!await keepCurrent("Start a new paper?")) return;
   openTexts = null; activeText = 0;
   paper = fresh();
   syncBar(); renderPalette(); renderRecent(); render();
@@ -2297,7 +2336,7 @@ function renderRecent(){
     const o = el("option", null, `${name}   (${when})`);
     o.value = String(i); sel.append(o);
   });
-  sel.onchange = e => {
+  sel.onchange = async e => {
     const snap = history()[+e.target.value];
     e.target.value = "";
     if (!snap) return;
@@ -2336,9 +2375,9 @@ $("#load").onclick = () => $("#file").click();
 $("#file").onchange = e => {
   const f = e.target.files[0]; if (!f) return;
   const rd = new FileReader();
-  rd.onload = () => {
+  rd.onload = async () => {
     try{
-      keepCurrent(`Opening ${f.name}.`);
+      if (!await keepCurrent(`Open ${f.name}?`)) return;
       const raw = String(rd.result);
       const fromTex = /\.tex$/i.test(f.name) ? modelFromTex(raw) : null;
       if (/\.tex$/i.test(f.name) && !fromTex)
