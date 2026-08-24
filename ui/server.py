@@ -8,6 +8,8 @@ only — nothing to install. Bound to localhost; it is not a public service.
 """
 import http.server
 import json
+import socket
+import threading
 import os
 import shutil
 import subprocess
@@ -178,13 +180,34 @@ def main():
     if not tectonic():
         print("  ! tectonic not found — the editor will run, but Compile "
               "will fail.\n    Install it with:  brew install tectonic\n")
-    srv = http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
+    # Listen on both loopback families. "localhost" resolves to ::1 before
+    # 127.0.0.1 on macOS, and while curl quietly falls back to IPv4, browsers
+    # often do not — so an IPv4-only server answers the terminal and refuses
+    # the browser, which looks exactly like the server not running.
+    class V6(http.server.ThreadingHTTPServer):
+        address_family = socket.AF_INET6
+
+    servers = []
+    try:
+        servers.append(http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Handler))
+    except OSError as e:
+        sys.exit(f"  cannot bind 127.0.0.1:{PORT} — {e}")
+    try:
+        servers.append(V6(("::1", PORT), Handler))
+    except OSError:
+        pass                      # no IPv6 loopback here; IPv4 alone is fine
+
     url = f"http://127.0.0.1:{PORT}/"
     print(f"  English B paper generator running at {url}")
+    if len(servers) > 1:
+        print(f"  (also on http://[::1]:{PORT}/ — so localhost works either way)")
     print("  Press Ctrl-C to stop.\n")
     webbrowser.open(url)
+
+    for srv in servers[1:]:
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
     try:
-        srv.serve_forever()
+        servers[0].serve_forever()
     except KeyboardInterrupt:
         print("\n  stopped")
 

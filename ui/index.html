@@ -2133,11 +2133,31 @@ async function compile(){
   const btn = $("#compile"), st = $("#status");
   btn.disabled = true; btn.textContent = "Compiling…";
   st.className = "status"; st.textContent = "Running tectonic…";
+  /* Build the document before the request, not inside it. Generating the
+     LaTeX and reaching the server are different failures, and folding them
+     into one catch reported every generation error as "cannot reach the
+     server" — which sent you to check a server that was running fine. */
+  let body;
+  try{
+    body = JSON.stringify({tex: buildTex(),
+                           markscheme: (typeof previewKind !== "undefined" && previewKind === "key"),
+                           session: paper.session || ""});
+  }catch(e){
+    st.className = "status bad";
+    st.textContent = "Could not build the paper: " + (e && e.message ? e.message : e);
+    $("#preview").style.display = "none";
+    $("#log").style.display = "block";
+    $("#log").textContent = "The paper could not be turned into LaTeX.\n\n"
+      + (e && e.stack ? e.stack : String(e))
+      + "\n\nThis is a fault in the generator, not in your paper — but the card "
+      + "you edited last is the place to look.";
+    btn.disabled = false; btn.textContent = "Compile";
+    return;
+  }
+
   try{
     const r = await fetch("/compile", {
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({tex: buildTex(), markscheme: previewKind === "key",
-                            session: paper.session || ""})
+      method:"POST", headers:{"Content-Type":"application/json"}, body
     });
     if (!r.ok){
       const msg = await r.text();
@@ -2167,8 +2187,8 @@ async function compile(){
     st.textContent = location.protocol === "file:"
       ? "This page was opened from a file, not from the server. "
         + "Run `make ui` and use the address it prints (http://127.0.0.1:8731/)."
-      : `Cannot reach ${location.origin} — is \`make ui\` still running, `
-        + `and is this the address it printed?`;
+      : `Cannot reach ${location.origin} — ${e && e.message ? e.message : e}. `
+        + `Is \`make ui\` still running, and is this the address it printed?`;
   }finally{
     btn.disabled = false; btn.textContent = "Compile";
   }
