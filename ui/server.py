@@ -58,6 +58,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/favicon.ico":
             return self._send(204, "image/x-icon", b"")
+        # build/ holds the last compiled paper — the .tex carries its embedded
+        # model, so serving it would hand any visitor the previous user's paper
+        # and its answers. It stays on disk for `make proof`; it is not served.
+        if self.path.split("?")[0].startswith("/build"):
+            return self._send(404, "text/plain", b"not found")
         return super().do_GET()
 
     def do_POST(self):
