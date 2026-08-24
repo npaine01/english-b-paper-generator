@@ -74,6 +74,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         except json.JSONDecodeError:
             return self._send(400, "text/plain", b"bad JSON")
         tex = payload.get("tex", "")
+        want_key = bool(payload.get("markscheme"))
+        session = str(payload.get("session", ""))[:60]
         if not tex.strip():
             return self._send(400, "text/plain", b"nothing to compile")
 
@@ -104,6 +106,51 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                          or "Warning" in l]
                 msg = "\n".join(lines[:40]) or log[-3000:] or "compile failed"
                 return self._send(400, "text/plain", msg.encode())
+
+            # The markscheme is a second document that reads the .ans the paper
+            # just wrote, so it can never drift out of step with the questions.
+            # markscheme.tex carries the measured landscape geometry; only its
+            # source name and session are swapped, so nothing is duplicated.
+            if want_key:
+                ans = tmp / "paper.ans"
+                if not ans.exists():
+                    return self._send(400, "text/plain",
+                                      b"the paper produced no answers to key")
+                src = (LATEX / "markscheme.tex").read_text(encoding="utf-8")
+                src = src.replace("\\newcommand\\ibmarkschemesource{reading-question-booklet}",
+                                  "\\newcommand\\ibmarkschemesource{paper}")
+                if session:
+                    import re as _re
+                    # a function, not a template: the replacement contains
+                    # backslashes and re would read \i as an escape
+                    src = _re.sub(r"\\ibsetsession\{[^}]*\}",
+                                  lambda m: "\\ibsetsession{"
+                                            + session.replace("\\", "") + "}",
+                                  src, count=1)
+                (tmp / "markscheme.tex").write_text(src, encoding="utf-8")
+                try:
+                    r2 = subprocess.run(
+                        [exe, "-X", "compile", "--keep-logs", "markscheme.tex"],
+                        cwd=tmp, capture_output=True, text=True, timeout=180)
+                except subprocess.TimeoutExpired:
+                    return self._send(400, "text/plain", b"markscheme timed out")
+                key = tmp / "markscheme.pdf"
+                if not key.exists():
+                    log = (r2.stderr or "") + "\n" + (r2.stdout or "")
+                    lines = [l for l in log.splitlines()
+                             if l.strip().startswith(("error", "!"))]
+                    return self._send(400, "text/plain",
+                                      ("\n".join(lines[:30]) or log[-2000:]
+                                       or "markscheme failed").encode())
+                data = key.read_bytes()
+                shutil.copy(key, BUILD / "markscheme.pdf")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/pdf")
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(data)
+                return
 
             data = pdf.read_bytes()
             shutil.copy(pdf, BUILD / "paper.pdf")

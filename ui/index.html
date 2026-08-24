@@ -413,6 +413,8 @@ body[data-layout="bar"]  .balance{display:flex}
   <div class="right">
     <div class="prevbar">
       <strong style="font-size:12.5px">Preview</strong>
+      <button class="btn mini" id="showpaper" title="Show the question paper">Paper</button>
+      <button class="btn mini" id="showkey" title="Compile the answer key from this paper">Markscheme</button>
       <div class="status" id="status">Not compiled yet</div>
       <button class="btn mini" id="dlpdf" disabled>Download PDF</button>
     </div>
@@ -2104,7 +2106,8 @@ async function compile(){
   try{
     const r = await fetch("/compile", {
       method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({tex: buildTex()})
+      body: JSON.stringify({tex: buildTex(), markscheme: previewKind === "key",
+                            session: paper.session || ""})
     });
     if (!r.ok){
       const msg = await r.text();
@@ -2123,7 +2126,8 @@ async function compile(){
     $("#preview").src = lastPdf + "#toolbar=1&navpanes=0";
     $("#dlpdf").disabled = false;
     st.className = warn ? "status bad" : "status";
-    st.textContent = warn ? warn : "Compiled · " + new Date().toLocaleTimeString();
+    st.textContent = warn ? warn
+      : (previewKind === "key" ? "Markscheme · " : "Compiled · ") + new Date().toLocaleTimeString();
   }catch(e){
     st.className = "status bad";
     st.textContent = "Cannot reach the server — is `make ui` still running?";
@@ -2240,6 +2244,17 @@ function renderRecent(){
     syncBar(); renderPalette(); renderRecent(); render();
   };
 }
+
+/* The markscheme is built from the .ans the paper writes as it compiles, so it
+   cannot describe a paper that no longer exists. Asking for it compiles both. */
+let previewKind = "paper";
+function setPreviewKind(k){
+  previewKind = k;
+  $("#showpaper").classList.toggle("primary", k === "paper");
+  $("#showkey").classList.toggle("primary", k === "key");
+}
+$("#showpaper").onclick = () => { setPreviewKind("paper"); compile(); };
+$("#showkey").onclick   = () => { setPreviewKind("key");   compile(); };
 
 $("#instr").onchange = e => { paper.instructions = e.target.value; render(); };
 $("#pagecode").onchange = e => { paper.pagecode = e.target.value; render(); };
