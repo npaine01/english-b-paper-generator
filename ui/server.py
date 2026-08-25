@@ -18,6 +18,8 @@ import tempfile
 import webbrowser
 from pathlib import Path
 
+import docx
+
 HERE = Path(__file__).resolve().parent
 LATEX = HERE.parent
 PORT = int(os.environ.get("IBEB_PORT", "8731"))
@@ -69,6 +71,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             first = ""
         if "/compile" in first:
             sys.stderr.write("  compile\n")
+        elif "/docx" in first:
+            sys.stderr.write("  docx\n")
 
     def log_error(self, *a, **kw):
         pass
@@ -91,14 +95,43 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return self._send(404, "text/plain", b"not found")
         return super().do_GET()
 
+    def _docx(self, payload):
+        """Write the paper as a Word document. No tectonic involved — it is
+        built from the model, not from the LaTeX."""
+        paper = payload.get("paper")
+        if not isinstance(paper, dict) or not paper.get("items"):
+            return self._send(400, "text/plain", b"nothing to export")
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "paper.docx"
+            try:
+                docx.build(paper, out)
+            except Exception as e:                      # a bad model, not a crash
+                return self._send(400, "text/plain",
+                                  f"could not write the document: {e}".encode())
+            data = out.read_bytes()
+        BUILD.mkdir(parents=True, exist_ok=True)
+        (BUILD / "paper.docx").write_bytes(data)
+        self.send_response(200)
+        self.send_header("Content-Type", "application/vnd.openxmlformats-"
+                                         "officedocument.wordprocessingml.document")
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(data)
+
     def do_POST(self):
-        if self.path != "/compile":
+        if self.path not in ("/compile", "/docx"):
             return self._send(404, "text/plain", b"not found")
         n = int(self.headers.get("Content-Length", 0))
+        if n > 8 * 1024 * 1024:              # a paper is tens of KB
+            return self._send(413, "text/plain", b"that is too large to be a paper")
         try:
             payload = json.loads(self.rfile.read(n) or b"{}")
         except json.JSONDecodeError:
             return self._send(400, "text/plain", b"bad JSON")
+        if self.path == "/docx":
+            return self._docx(payload)
+
         tex = payload.get("tex", "")
         want_key = bool(payload.get("markscheme"))
         session = str(payload.get("session", ""))[:60]

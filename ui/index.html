@@ -407,6 +407,7 @@ body[data-layout="bar"]  .balance{display:flex}
   <button class="btn" id="save">Save</button>
   <button class="btn" id="load">Open</button>
   <button class="btn" id="dltex">.tex</button>
+  <button class="btn" id="dldocx" title="A Word copy for editing — not a faithful paper">.docx</button>
   <button class="btn primary" id="compile">Compile</button>
 </div>
 
@@ -2465,6 +2466,25 @@ $("#showpaper").onclick = () => { setPreviewKind("paper"); compile(); };
 $("#showkey").onclick   = () => { setPreviewKind("key");   compile(); };
 $("#compile").onclick = compile;
 $("#dltex").onclick = () => download(fileStem() + ".tex", buildTex(), "text/x-tex");
+
+/* Word export. Built from the model on the server, not from the LaTeX, and
+   deliberately not a copy of the printed paper — Word cannot hold the measured
+   layout, so this is for editing and sharing, not for sitting. */
+$("#dldocx").onclick = async () => {
+  const b = $("#dldocx"); b.disabled = true; b.textContent = "…";
+  try{
+    const r = await fetch("/docx", {method:"POST",
+      headers:{"Content-Type":"application/json"}, body: JSON.stringify({paper})});
+    if (!r.ok) throw new Error(await r.text());
+    const blob = await r.blob();
+    const a = el("a"); a.href = URL.createObjectURL(blob);
+    a.download = fileStem() + ".docx"; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }catch(e){
+    $("#status").className = "status bad";
+    $("#status").textContent = "Word export failed: " + (e.message || e);
+  }finally{ b.disabled = false; b.textContent = ".docx"; }
+};
 $("#dlpdf").onclick = () => { if (lastPdf){ const a = el("a");
   a.href = lastPdf; a.download = "paper.pdf"; a.click(); } };
 $("#save").onclick = () => download(fileStem() + ".json", JSON.stringify(paper, null, 2), "application/json");
