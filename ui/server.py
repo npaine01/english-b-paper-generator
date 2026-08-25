@@ -36,6 +36,18 @@ def _tex(t):
     return t.strip()
 
 
+def _cell(t):
+    """A markscheme cell. One line prints as written; several print as the
+    bulleted list of accepted variants the real markschemes use — the corpus
+    shows them as "• less job security", one variant per bullet."""
+    lines = [_tex(l) for l in t.splitlines() if l.strip()]
+    if not lines:
+        return ""
+    if len(lines) == 1:
+        return lines[0]
+    return "\\ibbullets{" + "".join("\\item " + l for l in lines) + "}"
+
+
 def tectonic():
     exe = shutil.which("tectonic")
     if exe:
@@ -147,8 +159,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                                 q = int(nt.get("q"))
                             except (TypeError, ValueError):
                                 continue
-                            a = _tex(str(nt.get("accept", ""))[:400])
-                            b = _tex(str(nt.get("reject", ""))[:400])
+                            a = _cell(str(nt.get("accept", ""))[:800])
+                            b = _cell(str(nt.get("reject", ""))[:800])
                             if a or b:
                                 out.append("\\ibnote{%d}{%s}{%s}" % (q, a, b))
                     out.append(l)

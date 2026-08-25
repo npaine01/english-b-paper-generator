@@ -1617,6 +1617,8 @@ function optionList(parent, opts, answerIdx, onPick, onEdit, multi, picked, fixe
    \ibnote in markscheme.tex — which is how the IB records that a paraphrase is
    fine, or that a particular near-miss is not. It is folded away because most
    questions do not need one. */
+const countLines = v => String(v || "").split(/\r?\n/).filter(x => x.trim()).length;
+
 function markschemeNote(body, it, num){
   const has = String(it.accept || "").trim() || String(it.reject || "").trim();
   const d = document.createElement("details");
@@ -1630,24 +1632,37 @@ function markschemeNote(body, it, num){
   wrap.style.background = "transparent";
   wrap.style.padding = "6px 0 0";
 
+  /* One answer per line. A single line prints as it stands — "Exact wording
+     only" — and several print as the bulleted list of accepted variants the
+     real markschemes use. */
   const line = (label, key, placeholder) => {
     const r = el("div", "row");
+    r.style.alignItems = "flex-start";
     const l = el("label", null, label);
-    l.style.minWidth = "104px";
+    l.style.cssText = "min-width:104px;padding-top:6px";
     r.append(l);
-    const inp = el("input"); inp.type = "text";
-    inp.value = it[key] || "";
-    inp.placeholder = placeholder;
-    inp.style.flex = "1";
-    inp.oninput = e => { it[key] = e.target.value; save(); };
-    r.append(inp);
+    const ta = el("textarea");
+    ta.value = it[key] || "";
+    ta.placeholder = placeholder;
+    ta.rows = 2;
+    ta.style.cssText = "flex:1;min-height:46px";
+    ta.oninput = e => { it[key] = e.target.value; save();
+                        const n = countLines(e.target.value);
+                        cnt.textContent = n > 1 ? `${n} bullets` : ""; };
+    r.append(ta);
+    const cnt = el("span", "hint");
+    cnt.style.cssText = "min-width:52px;padding-top:6px";
+    cnt.textContent = countLines(it[key] || "") > 1
+      ? `${countLines(it[key])} bullets` : "";
+    r.append(cnt);
     wrap.append(r);
   };
-  line("Accept", "accept", "e.g. any answer meaning the same");
-  line("Do not accept", "reject", "e.g. the words of the question repeated");
+  line("Accept", "accept", "one accepted answer per line");
+  line("Do not accept", "reject", "one per line");
   wrap.append(el("div", "hint",
     `Printed against question ${num.from === num.to ? num.from : num.from + "\u2013" + num.to} `
-    + "in the markscheme. Leave either blank to omit that column."));
+    + "in the markscheme. One line prints as written; several print as bullets. "
+    + "Leave either blank to omit that column."));
   d.append(wrap);
   body.append(d);
 }
