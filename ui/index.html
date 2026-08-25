@@ -1620,49 +1620,76 @@ function optionList(parent, opts, answerIdx, onPick, onEdit, multi, picked, fixe
 const countLines = v => String(v || "").split(/\r?\n/).filter(x => x.trim()).length;
 
 function markschemeNote(body, it, num){
-  const has = String(it.accept || "").trim() || String(it.reject || "").trim();
+  const rows = num.to - num.from + 1;
+  /* A block that covers several questions gets a note per row: the answer file
+     writes one row per question, and \ibnote keys by question number, so each
+     row can carry its own guidance. Notes are held by position in the block, so
+     they follow their row when the paper is renumbered. */
+  if (rows > 1){
+    it.rowNotes = (it.rowNotes || []).slice(0, rows);
+    while (it.rowNotes.length < rows) it.rowNotes.push({accept:"", reject:""});
+  }
+  const any = rows > 1
+    ? it.rowNotes.some(n => String(n.accept || "").trim() || String(n.reject || "").trim())
+    : (String(it.accept || "").trim() || String(it.reject || "").trim());
+
   const d = document.createElement("details");
   d.className = "help";
-  if (has) d.open = true;
+  if (any) d.open = true;
   const sum = document.createElement("summary");
-  sum.textContent = has ? "Markscheme note" : "Add a markscheme note";
+  sum.textContent = any ? (rows > 1 ? "Markscheme notes" : "Markscheme note")
+                        : (rows > 1 ? `Add markscheme notes (${rows} rows)`
+                                    : "Add a markscheme note");
   d.append(sum);
 
   const wrap = el("div", "helpbody");
   wrap.style.background = "transparent";
   wrap.style.padding = "6px 0 0";
 
-  /* One answer per line. A single line prints as it stands — "Exact wording
-     only" — and several print as the bulleted list of accepted variants the
-     real markschemes use. */
-  const line = (label, key, placeholder) => {
+  /* One answer per line: a single line prints as written, several print as the
+     bulleted list of accepted variants the real markschemes use. */
+  const pair = (host, get, set, label) => {
     const r = el("div", "row");
     r.style.alignItems = "flex-start";
-    const l = el("label", null, label);
-    l.style.cssText = "min-width:104px;padding-top:6px";
-    r.append(l);
-    const ta = el("textarea");
-    ta.value = it[key] || "";
-    ta.placeholder = placeholder;
-    ta.rows = 2;
-    ta.style.cssText = "flex:1;min-height:46px";
-    ta.oninput = e => { it[key] = e.target.value; save();
-                        const n = countLines(e.target.value);
-                        cnt.textContent = n > 1 ? `${n} bullets` : ""; };
-    r.append(ta);
+    if (label){ const l = el("span", "lt", label);
+                l.style.cssText = "min-width:34px;padding-top:6px"; r.append(l); }
+    ["accept", "reject"].forEach(key => {
+      const ta = el("textarea");
+      ta.value = get(key) || "";
+      ta.placeholder = key === "accept" ? "Accept — one per line" : "Do not accept";
+      ta.rows = 2;
+      ta.style.cssText = "flex:1;min-height:44px";
+      ta.oninput = e => { set(key, e.target.value); save();
+                          cnt.textContent = tally(); };
+      r.append(ta);
+    });
     const cnt = el("span", "hint");
     cnt.style.cssText = "min-width:52px;padding-top:6px";
-    cnt.textContent = countLines(it[key] || "") > 1
-      ? `${countLines(it[key])} bullets` : "";
+    const tally = () => { const a = countLines(get("accept")), b = countLines(get("reject"));
+                          return Math.max(a, b) > 1 ? `${Math.max(a, b)} bullets` : ""; };
+    cnt.textContent = tally();
     r.append(cnt);
-    wrap.append(r);
+    host.append(r);
   };
-  line("Accept", "accept", "one accepted answer per line");
-  line("Do not accept", "reject", "one per line");
-  wrap.append(el("div", "hint",
-    `Printed against question ${num.from === num.to ? num.from : num.from + "\u2013" + num.to} `
-    + "in the markscheme. One line prints as written; several print as bullets. "
-    + "Leave either blank to omit that column."));
+
+  if (rows > 1){
+    const head = el("div", "row");
+    head.append(Object.assign(el("span", "lt"), {style:"min-width:34px"}));
+    head.append(Object.assign(el("label", null, "Accept"), {style:"flex:1"}));
+    head.append(Object.assign(el("label", null, "Do not accept"), {style:"flex:1"}));
+    head.append(Object.assign(el("span"), {style:"min-width:52px"}));
+    wrap.append(head);
+    it.rowNotes.forEach((n, i) =>
+      pair(wrap, k => n[k], (k, v) => { n[k] = v; }, (num.from + i) + "."));
+  } else {
+    pair(wrap, k => it[k], (k, v) => { it[k] = v; });
+  }
+
+  wrap.append(el("div", "hint", rows > 1
+    ? `One note per question, ${num.from}\u2013${num.to}. One line prints as written; `
+      + "several print as bullets."
+    : `Printed against question ${num.from} in the markscheme. One line prints as `
+      + "written; several print as bullets."));
   d.append(wrap);
   body.append(d);
 }
@@ -2243,12 +2270,19 @@ async function compile(){
   let body;
   try{
     const n = numbering();
-    const notes = paper.items.map((it, i) => ({ it, n: n[i] }))
-      .filter(({ it, n }) => n.from && (String(it.accept || "").trim()
-                                     || String(it.reject || "").trim()))
-      .map(({ it, n }) => ({ q: n.from,
-                             accept: String(it.accept || "").trim(),
-                             reject: String(it.reject || "").trim() }));
+    const notes = [];
+    paper.items.forEach((it, i) => {
+      const num = n[i];
+      if (!num.from) return;
+      const rows = num.to - num.from + 1;
+      const push = (q, a, b) => {
+        a = String(a || "").trim(); b = String(b || "").trim();
+        if (a || b) notes.push({ q, accept: a, reject: b });
+      };
+      if (rows > 1) (it.rowNotes || []).forEach((rn, k) =>
+        push(num.from + k, rn.accept, rn.reject));
+      else push(num.from, it.accept, it.reject);
+    });
     body = JSON.stringify({tex: buildTex(), notes,
                            markscheme: (typeof previewKind !== "undefined" && previewKind === "key"),
                            session: paper.session || ""});
