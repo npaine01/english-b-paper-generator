@@ -150,6 +150,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
             shutil.copy(LATEX / "ibenglishb.sty", tmp)
+            shutil.copy(LATEX / "qdhscover.sty", tmp)
+            shutil.copytree(LATEX / "assets", tmp / "assets")
             (tmp / "paper.tex").write_text(tex, encoding="utf-8")
             try:
                 r = subprocess.run(

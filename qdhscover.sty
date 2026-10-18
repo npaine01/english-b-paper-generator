@@ -1,0 +1,55 @@
+% QDHS internal cover. Optional: the generic ibcover remains unchanged.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{qdhscover}[2026/10/18 QDHS internal examination cover]
+\RequirePackage{ibenglishb}
+% Only this optional cover needs Chinese. Fandol ships with TeX and Tectonic;
+% no proprietary school font or OS-installed Chinese font is required.
+\ifPDFTeX
+  \RequirePackage{CJKutf8}
+  \newcommand\qdhszh[1]{\begin{CJK*}{UTF8}{gbsn}#1\end{CJK*}}
+\else
+  \newfontfamily\qdhsCJK{FandolHei-Regular.otf}
+  \newcommand\qdhszh[1]{{\qdhsCJK #1}}
+\fi
+\newcommand\qdhsat[4]{%
+  \put(\strip@pt\dimexpr#1mm\relax,\strip@pt\dimexpr-#2mm\relax){%
+    \makebox(0,0)[lt]{\parbox[t]{#3mm}{\vspace{0pt}%
+      \normalfont\fontsize{10}{13}\selectfont #4}}}}
+\newcommand\qdhsbox[3]{%
+  \qdhsat{#1}{#2}{#3}{\setlength\fboxsep{0pt}%
+    \fbox{\rule{0pt}{7mm}\rule{\dimexpr#3mm-2\fboxrule}{0pt}}}}
+\newcommand\qdhslabel[2]{\textbf{#1}\,\qdhszh{#2}:}
+\newcommand\qdhscover[8]{% academic, exam, date, duration, grade, level, paper, instructions
+  \thispagestyle{ibcover}%
+  \AddToHookNext{shipout/foreground}{%
+    \qdhsat{24}{23}{79}{\includegraphics[width=79mm]{assets/qdhs-logo-mono.png}}%
+    \qdhsat{104}{23}{85}{\raggedleft\bfseries
+      #1\par\vspace{3mm}#2\par\vspace{3mm}#3\par\vspace{3mm}#4}%
+    \qdhsat{27}{59}{30}{\fontsize{9}{11}\selectfont\qdhslabel{CHN Name}{中文名}}%
+    \qdhsbox{57}{57}{27}%
+    \qdhsat{27}{69}{30}{\fontsize{9}{11}\selectfont\qdhslabel{ENG Name}{英文名}}%
+    \qdhsbox{57}{67}{27}%
+    \qdhsat{92}{59}{34}{\fontsize{9}{11}\selectfont\qdhslabel{Student ID}{学号}}%
+    \qdhsbox{92}{67}{32}%
+    \qdhsat{128}{59}{26}{\fontsize{9}{11}\selectfont\qdhslabel{Section}{班级号}}%
+    \qdhsbox{154}{57}{32}%
+    \qdhsat{128}{68}{26}{\fontsize{9}{10}\selectfont
+      \textbf{Teacher's}\par\qdhslabel{Name}{教师姓名}}%
+    \qdhsbox{154}{67}{32}%
+    \qdhsat{24}{78}{166}{\rule{166mm}{0.4pt}}%
+    \qdhsat{28}{83}{80}{\qdhslabel{Grade}{年级}\quad #5}%
+    \qdhsat{114}{83}{76}{\qdhslabel{Level}{水平}\quad #6}%
+    \qdhsat{28}{93}{80}{\qdhslabel{Subject}{学科}\quad English B}%
+    \qdhsat{114}{93}{76}{\qdhslabel{Paper}{卷}\quad #7}%
+    \qdhsat{25}{111}{164}{%
+      \setlength\parskip{0pt}%
+      #8}%
+    \qdhsat{65}{232}{127}{\setlength\fboxsep{3mm}%
+      \fbox{\parbox{\dimexpr127mm-6mm-2\fboxrule}{%
+        \fontsize{8.5}{12}\selectfont
+        Created by (Subject Teacher) \qdhszh{出卷人（任课老师）}:\ \hrulefill\par\vspace{3mm}
+        Checked by (Subject Leads) \qdhszh{校对人（学科组长）}:\ \hrulefill\par\vspace{3mm}
+        Reviewed by (Head of Curriculum) \qdhszh{核对人（课程主管）}:\ \hrulefill\par\vspace{3mm}
+        Audited and printed by \qdhszh{试卷排版和影印负责}:\ \hrulefill}}}%
+  }%
+  \null\clearpage}

@@ -16,6 +16,7 @@ box, a 7.16 mm option pitch — are approximated here in Word's own units and
 will not survive editing. Use the PDF for anything a student sits.
 """
 import zipfile
+from pathlib import Path
 from xml.sax.saxutils import escape
 
 W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
@@ -314,29 +315,71 @@ DOC_RELS = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
 def build(paper, out_path):
     """Write `paper` (the editor's model, as a dict) to out_path as a .docx."""
     kind = paper.get("kind", "reading")
+    internal = paper.get("cover") == "internal"
+    cover = paper.get("coverDetails") or {}
     head = []
-    if paper.get("title"):
+    if internal:
+        # Inline image is robust when colleagues edit the Word copy. Its flow
+        # layout deliberately follows the existing editable-export approach.
+        head.append('''<w:p><w:r><w:drawing>
+          <wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">
+          <wp:extent cx="2844000" cy="574544"/><wp:docPr id="1" name="QDHS school logo"/>
+          <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+          <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+          <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+          <pic:nvPicPr><pic:cNvPr id="0" name="QDHS logo"/><pic:cNvPicPr/></pic:nvPicPr>
+          <pic:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rIdLogo"/>
+          <a:stretch><a:fillRect/></a:stretch></pic:blipFill>
+          <pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="2844000" cy="574544"/></a:xfrm>
+          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>
+          </pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>''')
+        for value in (cover.get("academic"), cover.get("exam"), paper.get("date"),
+                      cover.get("duration") or ("90 mins" if kind == "paper1" else "60 mins")):
+            if value:
+                head.append(para(value, bold=True, align="right", after=100))
+        for line in ("CHN Name 中文名: __________________    Student ID 学号: ______________",
+                     "ENG Name 英文名: __________________    Section 班级号: ______________",
+                     "Teacher’s Name 教师姓名: ________________________________________",
+                     f'Grade 年级: {cover.get("grade", "")}          Level 水平: Higher level',
+                     f'Subject 学科: English B          Paper 卷: {dict(reading="2 Reading", listening="2 Listening", paper1="1 Writing").get(kind, "2 Reading")}'):
+            head.append(para(line, after=140))
+    elif paper.get("title"):
         head.append(para(paper["title"], bold=True, size=24, after=60))
-    head.append(para(TITLES.get(kind, TITLES["reading"]), bold=True, size=28,
-                     after=80))
-    meta = " · ".join(x for x in (paper.get("session"), paper.get("date"),
-                                  "1 h 30 m" if kind == "paper1" else "1 h") if x)
-    head.append(para(meta, size=20, after=200))
+    if not internal:
+        head.append(para(TITLES.get(kind, TITLES["reading"]), bold=True, size=28,
+                         after=80))
+        meta = " · ".join(x for x in (paper.get("session"), paper.get("date"),
+                                      "1 h 30 m" if kind == "paper1" else "1 h") if x)
+        head.append(para(meta, size=20, after=200))
 
-    head.append(para("Instructions to students", bold=True, after=80))
+    head.append(para("INSTRUCTIONS TO CANDIDATES:" if internal else "Instructions to students", bold=True, after=80))
     marks = 30 if kind == "paper1" else int(paper.get("target") or 0)
     for line in INSTRUCTIONS.get(kind, INSTRUCTIONS["reading"]):
+        if internal and line.startswith("Write your session number"):
+            continue
         head.append(para("•   " + line, ind=6, after=50))
     head.append(para(f"•   The maximum mark for this examination paper is "
                      f"[{marks} marks].", ind=6, after=60))
+    if internal:
+        for line in ("Created by (Subject Teacher) 出卷人（任课老师）",
+                     "Checked by (Subject Leads) 校对人（学科组长）",
+                     "Reviewed by (Head of Curriculum) 核对人（课程主管）",
+                     "Audited and printed by 试卷排版和影印负责"):
+            head.append(para(line + ": __________________", size=18, before=100))
     head.append('<w:p><w:r><w:br w:type="page"/></w:r></w:p>')
 
     xml = DOC.format(body="".join(head) + body(paper))
 
     with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr("[Content_Types].xml", CONTENT_TYPES)
+        types = CONTENT_TYPES
+        rels = DOC_RELS
+        if internal:
+            types = types.replace('</Types>', '<Default Extension="png" ContentType="image/png"/></Types>')
+            rels = rels.replace('</Relationships>', '<Relationship Id="rIdLogo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/qdhs-logo.png"/></Relationships>')
+            z.write(Path(__file__).resolve().parent.parent / "assets/qdhs-logo-mono.png", "word/media/qdhs-logo.png")
+        z.writestr("[Content_Types].xml", types)
         z.writestr("_rels/.rels", RELS)
-        z.writestr("word/_rels/document.xml.rels", DOC_RELS)
+        z.writestr("word/_rels/document.xml.rels", rels)
         z.writestr("word/styles.xml", STYLES)
         z.writestr("word/document.xml", xml)
     return out_path

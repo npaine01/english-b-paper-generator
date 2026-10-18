@@ -50,8 +50,23 @@ you work.
 - **Save** / **Open** keep the paper as JSON; your work is also autosaved in
   the browser. **.tex** exports the source if you want to edit it by hand.
 
-The editor covers Paper 2 reading and listening. Paper 1 and the text booklet
-are written directly in LaTeX — see `paper1.tex` and `reading-text-booklet.tex`.
+The editor covers Paper 1 writing and Paper 2 reading and listening. The text
+booklet is written directly in LaTeX — see `reading-text-booklet.tex`.
+
+Choose **Cover → Generic** for the existing IB-style cover, or **QDHS internal**
+for the school cover with its monochrome logo, bilingual student fields and
+four staff sign-off lines. Open **Internal cover details** to enter the academic
+year/term, examination name, grade and optional duration. The date comes from
+the Date field; level and paper follow the selected HL paper. Blank duration
+uses 90 minutes for writing and 60 for reading/listening. Cover choices and
+details are saved with the paper; older saved papers retain the generic cover.
+The interface theme is independent of the printed cover.
+
+The internal cover is also included in the editable Word export, using Word's
+flow layout rather than the PDF's fixed layout. Exported LaTeX using it needs
+`qdhscover.sty` and `assets/qdhs-logo-mono.png` alongside `ibenglishb.sty`.
+The optional cover uses the TeX-distributed Fandol Chinese font with Tectonic,
+XeLaTeX or LuaLaTeX (Tectonic downloads it on first use); pdfLaTeX uses CJKutf8.
 
 ## Building
 

@@ -276,7 +276,8 @@
 \newcommand\ibtick{\raisebox{-0.2ex}{\small\ding{51}}}
 
 % Gap marker:  [ – 7 – ]   (bold, non-breaking, spaced en dashes)
-\newcommand\ibgap[1]{\textbf{[\nobreakspace--\nobreakspace#1\nobreakspace--\nobreakspace]}}
+% A gap marker is one indivisible unit, including the closing bracket.
+\newcommand\ibgap[1]{\mbox{\textbf{[\nobreakspace--\nobreakspace#1\nobreakspace--\nobreakspace]}}}
 
 % Reverse-video paragraph badge, as printed beside the text booklet paragraphs.
 % Set in a fixed 4 mm cell so successive paragraph numbers line up.
